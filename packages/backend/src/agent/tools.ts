@@ -10,8 +10,9 @@ export const herramientas = [
       properties: {
         descripcion: { type: "string", description: "Qué vendió, en pocas palabras" },
         monto: { type: "number" },
-        metodo_pago: { type: "string", enum: ["efectivo", "yape", "plin", "transferencia", "fiado"] },
+        metodo_pago: { type: "string", enum: ["efectivo", "yape", "plin", "transferencia"] },
         contraparte: { type: "string", description: "A quién vendió, si lo mencionó" },
+        transcripcion: { type: "string", description: "Fragmento exacto dicho por la persona para esta venta" },
       },
       required: ["descripcion", "monto"],
     },
@@ -22,7 +23,12 @@ export const herramientas = [
     description: "Registra un gasto del negocio o relacionado con el negocio.",
     parameters: {
       type: "object",
-      properties: { descripcion: { type: "string" }, monto: { type: "number" } },
+      properties: {
+        descripcion: { type: "string", description: "En qué gastó, en pocas palabras" },
+        monto: { type: "number" },
+        metodo_pago: { type: "string", enum: ["efectivo", "yape", "plin", "transferencia"] },
+        transcripcion: { type: "string", description: "Fragmento exacto dicho por la persona para este gasto" },
+      },
       required: ["descripcion", "monto"],
     },
   },
@@ -36,6 +42,7 @@ export const herramientas = [
         contraparte: { type: "string", description: "Quién le debe" },
         monto: { type: "number" },
         descripcion: { type: "string" },
+        transcripcion: { type: "string", description: "Fragmento exacto dicho por la persona para este fiado" },
       },
       required: ["contraparte", "monto"],
     },
@@ -53,8 +60,8 @@ export const herramientas = [
 
 export const ventaSchema = z.object({
   descripcion: z.string().min(1), monto: z.number().positive(),
-  metodo_pago: z.enum(["efectivo", "yape", "plin", "transferencia", "fiado"]).optional(), contraparte: z.string().optional(),
+  metodo_pago: z.enum(["efectivo", "yape", "plin", "transferencia"]).optional(), contraparte: z.string().optional(), transcripcion: z.string().min(1).optional(),
 });
-export const gastoSchema = z.object({ descripcion: z.string().min(1), monto: z.number().positive() });
-export const cobrarSchema = z.object({ contraparte: z.string().min(1), monto: z.number().positive(), descripcion: z.string().optional() });
+export const gastoSchema = z.object({ descripcion: z.string().min(1), monto: z.number().positive(), metodo_pago: z.enum(["efectivo", "yape", "plin", "transferencia"]).optional(), transcripcion: z.string().min(1).optional() });
+export const cobrarSchema = z.object({ contraparte: z.string().min(1), monto: z.number().positive(), descripcion: z.string().optional(), transcripcion: z.string().min(1).optional() });
 export const resumenSchema = z.object({ fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() });

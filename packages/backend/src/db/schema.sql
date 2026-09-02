@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS movimientos (
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE movimientos ADD CONSTRAINT movimientos_venta_no_fiada
+  CHECK (NOT (tipo = 'venta' AND metodo_pago = 'fiado'));
+
 CREATE INDEX IF NOT EXISTS idx_movimientos_vendedor_fecha ON movimientos(vendedor_id, creado_en DESC);
 CREATE INDEX IF NOT EXISTS idx_movimientos_tipo ON movimientos(tipo);
 
@@ -31,8 +34,20 @@ CREATE TABLE IF NOT EXISTS resumen_diario (
   total_ventas NUMERIC(12,2) NOT NULL DEFAULT 0,
   total_gastos NUMERIC(12,2) NOT NULL DEFAULT 0,
   saldo_del_dia NUMERIC(12,2) NOT NULL DEFAULT 0,
+  total_por_cobrar NUMERIC(12,2) NOT NULL DEFAULT 0,
   UNIQUE(vendedor_id, fecha)
 );
+
+ALTER TABLE vendedores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE movimientos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE resumen_diario ENABLE ROW LEVEL SECURITY;
+
+-- The backend and dashboard server use the Supabase service role. No browser
+-- policy is deliberately exposed: a vendor's ledger must never be public.
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE movimientos;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 INSERT INTO vendedores (telefono, nombre, nombre_negocio)
 VALUES ('+51999999999', 'María', 'Pollería María')

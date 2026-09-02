@@ -1,10 +1,8 @@
-import dotenv from "dotenv";
+import "./env.js";
 import Fastify from "fastify";
 import formbody from "@fastify/formbody";
 import { twilioRoutes } from "./routes/twilio.js";
 import { streamRoutes } from "./routes/stream.js";
-
-dotenv.config({ path: process.env.ENV_FILE ?? "../../.env" });
 
 const app = Fastify({ logger: true });
 await app.register(formbody);

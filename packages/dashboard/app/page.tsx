@@ -3,22 +3,29 @@ import { GraficoFlujoCaja } from "../components/GraficoFlujoCaja";
 import { ListaMovimientos } from "../components/ListaMovimientos";
 import { LiveRefresh } from "../components/LiveRefresh";
 import { ResumenDelDia } from "../components/ResumenDelDia";
-import { obtenerFlujo, obtenerMovimientos, obtenerResumen } from "../lib/data";
+import { dashboardConfigurado, fechaLima, obtenerFlujo, obtenerMovimientos, obtenerResumen, obtenerVendedor } from "../lib/data";
 import type { TipoMovimiento } from "../lib/types";
 
 const types: Array<{ value: TipoMovimiento; label: string }> = [
-  { value: "venta", label: "Ventas" }, { value: "gasto", label: "Gastos" }, { value: "cuenta_por_cobrar", label: "Por cobrar" }, { value: "cuenta_por_pagar", label: "Por pagar" },
+  { value: "venta", label: "Ventas" }, { value: "gasto", label: "Gastos" }, { value: "cuenta_por_cobrar", label: "Por cobrar" },
 ];
 
+export const dynamic = "force-dynamic";
+
 export default async function Dashboard({ searchParams }: { searchParams: { tipo?: TipoMovimiento; desde?: string; hasta?: string } }) {
-  const [resumen, movimientos, flujo] = await Promise.all([
+  const [resumen, movimientos, flujo, vendedor] = await Promise.all([
     obtenerResumen(), obtenerMovimientos(searchParams), obtenerFlujo(7),
+    obtenerVendedor(),
   ]);
-  return <main className="app-shell">
+  const configured = dashboardConfigurado();
+  const fecha = new Intl.DateTimeFormat("es-PE", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${fechaLima()}T12:00:00-05:00`));
+  const nombre = vendedor?.nombre ?? vendedor?.nombre_negocio ?? "tu negocio";
+  return <main className="app-shell antialiased">
     <LiveRefresh />
     <aside className="sidebar"><div className="brand-mark">R</div><div className="sidebar-line active"/><div className="sidebar-line"/><div className="sidebar-line"/></aside>
     <section className="workspace">
-      <header className="topbar"><div><p className="kicker">Lunes, 1 de septiembre</p><h1>Buenos días, María</h1></div><div className="voice-status"><span className="pulse"/><Mic size={17} aria-hidden="true"/> Wari está listo</div></header>
+      <header className="topbar"><div><p className="kicker">{fecha}</p><h1>Buenos días, {nombre}</h1></div><div className="voice-status"><span className="pulse"/><Mic size={17} aria-hidden="true"/> Wari está listo</div></header>
+      {!configured && <aside className="configuration-warning" role="status"><strong>Panel sin conectar.</strong> Configura las variables en <code>packages/dashboard/.env.local</code> para mostrar el libro real. No se muestran datos de demostración.</aside>}
       <section className="intro"><div><h2>Tu caja, clara.</h2><p>Así se movió tu negocio hoy. Cada registro viene directo de tu llamada.</p></div><span className="today">HOY</span></section>
       <ResumenDelDia resumen={resumen}/>
       <div className="content-grid">

@@ -10,7 +10,7 @@ RIMPILOT fue creado desde cero para el AssemblyAI Voice Agent Hackathon 2026. El
 - Puente de audio G.711 μ-law (`audio/pcmu`) con AssemblyAI Voice Agent API, sin recodificar audio.
 - Wari, agente conversacional en español con cuatro herramientas: venta, gasto, cuenta por cobrar y resumen diario.
 - PostgreSQL/Supabase con trazabilidad: cada movimiento conserva el fragmento de transcripción que lo originó.
-- Dashboard Next.js responsive con resumen de caja, filtros, detalle auditable, gráfico de 7 días y actualización en tiempo real.
+- Dashboard Next.js responsive con resumen de caja, filtros, detalle auditable, gráfico de 7 días y actualización automática sin recargar.
 
 ## Levantarlo en menos de cinco minutos
 
@@ -25,7 +25,7 @@ Copy-Item .env.example .env  # PowerShell en Windows
 
 1. Crea un proyecto en Supabase y ejecuta todo [packages/backend/src/db/schema.sql](packages/backend/src/db/schema.sql) en el SQL Editor.
 2. Completa `DATABASE_URL` y las credenciales de AssemblyAI/Twilio en `.env`.
-3. Añade en `.env` `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY`. Para que el panel se actualice solo, habilita Realtime/replication para la tabla `movimientos` en Supabase.
+3. Copia `packages/dashboard/.env.local.example` como `packages/dashboard/.env.local`. Añade ahí `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y el UUID de `RIMPILOT_VENDOR_ID`. El dashboard es de un negocio por despliegue: todas las consultas se limitan a ese UUID y no hay datos de muestra ocultos.
 4. Arranca el backend y abre un túnel público:
 
 ```bash
@@ -36,7 +36,7 @@ ngrok http 3001
 5. Copia la URL HTTPS de ngrok a `PUBLIC_URL` (por ejemplo, `https://abc.ngrok.app`) y reinicia el backend. En el número de Twilio configura **A call comes in** como `POST https://abc.ngrok.app/twilio/voice`.
 6. En otra terminal inicia el dashboard con `pnpm dev:dashboard` y abre `http://localhost:3000`.
 
-El panel se muestra también en modo demo si faltan las variables de Supabase; esa vista permite revisar el diseño, pero no persiste datos.
+Si faltan variables del dashboard, el panel muestra ceros y una advertencia de configuración; nunca simula datos contables.
 
 ## Comprobar el audio antes de la demo
 
@@ -82,8 +82,7 @@ pnpm build
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | Reservadas para operaciones de Twilio y el número de demo. |
 | `DATABASE_URL` | Conexión PostgreSQL de Supabase para el backend. |
 | `PUBLIC_URL` | URL pública del backend, normalmente la URL HTTPS de ngrok en desarrollo. |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Cliente Realtime del dashboard. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Lectura server-side del dashboard; no se expone al navegador. |
+| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RIMPILOT_VENDOR_ID` | Van en `packages/dashboard/.env.local`. El servicio consulta solo ese vendedor y la key nunca se expone al navegador. |
 
 ## Roadmap
 

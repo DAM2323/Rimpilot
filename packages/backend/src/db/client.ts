@@ -1,13 +1,12 @@
 import postgres from "postgres";
 
-const databaseUrl = process.env.DATABASE_URL;
+let client: ReturnType<typeof postgres> | null = null;
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL es obligatoria para iniciar el backend.");
+/** Opens the database only when a request actually needs it. */
+export function sql() {
+  if (client) return client;
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL es obligatoria para usar la base de datos.");
+  client = postgres(databaseUrl, { max: 10, idle_timeout: 20, connect_timeout: 10 });
+  return client;
 }
-
-export const sql = postgres(databaseUrl, {
-  max: 10,
-  idle_timeout: 20,
-  connect_timeout: 10,
-});

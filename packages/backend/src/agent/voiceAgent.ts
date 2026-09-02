@@ -6,7 +6,7 @@ import { consultarResumen, registrarMovimiento, type MetodoPago } from "../servi
 
 const voiceUrl = "wss://agents.assemblyai.com/v1/realtime";
 
-type AgentEvent = { type: string; audio?: string; text?: string; session_id?: string; call_id?: string; name?: string; arguments?: unknown };
+type AgentEvent = { type: string; audio?: string; text?: string; message?: string; session_id?: string; call_id?: string; name?: string; arguments?: unknown };
 type ToolContext = { vendedorId: string; callSid?: string; getTranscript: () => string };
 
 function parseEvent(raw: WebSocket.RawData): AgentEvent | null {
@@ -23,6 +23,7 @@ export class VoiceAgentBridge {
   private ready = false;
   private latestTranscript = "";
   private pendingToolCalls: AgentEvent[] = [];
+  private pendingAudio: string[] = [];
 
   constructor(
     private readonly context: Omit<ToolContext, "getTranscript">,
@@ -44,6 +45,8 @@ export class VoiceAgentBridge {
   sendAudio(audio: string): void {
     if (this.ready && this.socket.readyState === WebSocket.OPEN) {
       this.send({ type: "input.audio", audio });
+    } else if (this.pendingAudio.length < 100) {
+      this.pendingAudio.push(audio);
     }
   }
 
@@ -75,11 +78,14 @@ export class VoiceAgentBridge {
     if (!event) return;
     if (event.type === "session.ready") {
       this.ready = true;
+      for (const audio of this.pendingAudio.splice(0)) this.send({ type: "input.audio", audio });
       this.handlers.onReady();
     } else if (event.type === "reply.audio" && event.audio) {
       this.handlers.onAudio(event.audio);
     } else if (event.type === "input.speech.started") {
       this.handlers.onBargeIn();
+    } else if (event.type === "transcript.user.delta" && event.text) {
+      this.latestTranscript += event.text;
     } else if (event.type === "transcript.user" && event.text) {
       this.latestTranscript = event.text;
     } else if (event.type === "tool.call") {
@@ -87,7 +93,7 @@ export class VoiceAgentBridge {
     } else if (event.type === "reply.done") {
       void this.respondToPendingTools();
     } else if (event.type === "session.error") {
-      this.handlers.onError(event.text ?? "AssemblyAI devolvió un error de sesión.");
+      this.handlers.onError(event.message ?? event.text ?? "AssemblyAI devolvió un error de sesión.");
     }
   }
 
@@ -111,14 +117,14 @@ export class VoiceAgentBridge {
       const args = ventaSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
         tipo: "venta", descripcion: args.descripcion, monto: args.monto, contraparte: args.contraparte,
-        metodoPago: args.metodo_pago as MetodoPago | undefined, callSid: this.context.callSid, transcripcion,
+        metodoPago: args.metodo_pago as MetodoPago | undefined, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
     }
     if (name === "registrar_gasto") {
       const args = gastoSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
-        tipo: "gasto", descripcion: args.descripcion, monto: args.monto, callSid: this.context.callSid, transcripcion,
+        tipo: "gasto", descripcion: args.descripcion, monto: args.monto, metodoPago: args.metodo_pago as MetodoPago | undefined, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
     }
@@ -126,7 +132,7 @@ export class VoiceAgentBridge {
       const args = cobrarSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
         tipo: "cuenta_por_cobrar", descripcion: args.descripcion ?? "Venta al fiado", monto: args.monto,
-        contraparte: args.contraparte, metodoPago: "fiado", callSid: this.context.callSid, transcripcion,
+        contraparte: args.contraparte, metodoPago: "fiado", callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
     }

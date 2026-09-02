@@ -17,7 +17,7 @@ type MovimientoInput = {
 export type Vendedor = { id: string; telefono: string; nombre: string | null; nombre_negocio: string | null };
 
 export async function obtenerOCrearVendedor(telefono: string): Promise<Vendedor> {
-  const [vendedor] = await sql<Vendedor[]>`
+  const [vendedor] = await sql()<Vendedor[]>`
     INSERT INTO vendedores (telefono)
     VALUES (${telefono})
     ON CONFLICT (telefono) DO UPDATE SET telefono = EXCLUDED.telefono
@@ -27,7 +27,7 @@ export async function obtenerOCrearVendedor(telefono: string): Promise<Vendedor>
 }
 
 export async function registrarMovimiento(vendedorId: string, input: MovimientoInput): Promise<{ id: string }> {
-  const [movimiento] = await sql<{ id: string }[]>`
+  const [movimiento] = await sql()<{ id: string }[]>`
     INSERT INTO movimientos (vendedor_id, tipo, descripcion, monto, contraparte, metodo_pago, call_sid, transcripcion)
     VALUES (
       ${vendedorId}, ${input.tipo}, ${input.descripcion.trim()}, ${input.monto},

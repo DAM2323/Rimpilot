@@ -20,7 +20,7 @@ export function fechaLima(date = new Date()): string {
 }
 
 export async function recalcularResumen(vendedorId: string, fecha = fechaLima()): Promise<ResumenDelDia> {
-  const [totals] = await sql<{
+  const [totals] = await sql()<{
     total_ventas: string;
     total_gastos: string;
     total_por_cobrar: string;
@@ -45,13 +45,14 @@ export async function recalcularResumen(vendedorId: string, fecha = fechaLima())
     totalPorCobrar: Number(totals.total_por_cobrar),
   };
 
-  await sql`
-    INSERT INTO resumen_diario (vendedor_id, fecha, total_ventas, total_gastos, saldo_del_dia)
-    VALUES (${vendedorId}, ${fecha}, ${summary.totalVentas}, ${summary.totalGastos}, ${summary.saldoDelDia})
+  await sql()`
+    INSERT INTO resumen_diario (vendedor_id, fecha, total_ventas, total_gastos, saldo_del_dia, total_por_cobrar)
+    VALUES (${vendedorId}, ${fecha}, ${summary.totalVentas}, ${summary.totalGastos}, ${summary.saldoDelDia}, ${summary.totalPorCobrar})
     ON CONFLICT (vendedor_id, fecha) DO UPDATE SET
       total_ventas = EXCLUDED.total_ventas,
       total_gastos = EXCLUDED.total_gastos,
-      saldo_del_dia = EXCLUDED.saldo_del_dia
+      saldo_del_dia = EXCLUDED.saldo_del_dia,
+      total_por_cobrar = EXCLUDED.total_por_cobrar
   `;
   return summary;
 }
