@@ -50,17 +50,13 @@ export async function obtenerMovimientos(filters: { tipo?: TipoMovimiento; desde
 export async function obtenerResumen(): Promise<Resumen> {
   const dashboard = config();
   if (!dashboard) return { totalVentas: 0, totalGastos: 0, saldoDelDia: 0, totalPorCobrar: 0 };
-  const range = rangoLima(fechaLima());
-  const { data, error } = await dashboard.client.from("movimientos").select("tipo,monto").eq("vendedor_id", dashboard.vendedorId).gte("creado_en", range.start).lt("creado_en", range.end);
+  const { data, error } = await dashboard.client.from("resumen_diario").select("total_ventas,total_gastos,saldo_del_dia,total_por_cobrar").eq("vendedor_id", dashboard.vendedorId).eq("fecha", fechaLima()).maybeSingle();
   if (error) throw new Error(error.message);
-  return (data ?? []).reduce<Resumen>((summary, row) => {
-    const monto = number(row.monto);
-    if (row.tipo === "venta") summary.totalVentas += monto;
-    if (row.tipo === "gasto") summary.totalGastos += monto;
-    if (row.tipo === "cuenta_por_cobrar") summary.totalPorCobrar += monto;
-    summary.saldoDelDia = summary.totalVentas - summary.totalGastos;
-    return summary;
-  }, { totalVentas: 0, totalGastos: 0, saldoDelDia: 0, totalPorCobrar: 0 });
+  if (!data) return { totalVentas: 0, totalGastos: 0, saldoDelDia: 0, totalPorCobrar: 0 };
+  return {
+    totalVentas: number(data.total_ventas), totalGastos: number(data.total_gastos),
+    saldoDelDia: number(data.saldo_del_dia), totalPorCobrar: number(data.total_por_cobrar),
+  };
 }
 
 export async function obtenerFlujo(days = 7): Promise<PuntoFlujo[]> {
