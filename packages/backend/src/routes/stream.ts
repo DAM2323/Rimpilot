@@ -1,25 +1,44 @@
 import type { FastifyPluginAsync } from "fastify";
 import websocket from "@fastify/websocket";
 import type { RawData } from "ws";
+import { z } from "zod";
+import { textoDeFrame } from "../agent/rawData.js";
 import { VoiceAgentBridge } from "../agent/voiceAgent.js";
 import { verificarStreamToken } from "../agent/streamToken.js";
 import { consultarResumen } from "../services/libroContable.js";
 
 /** Tope de sesiones simultáneas de AssemblyAI: la clave es compartida y se paga por uso. */
-const MAX_LLAMADAS = Math.max(1, Number(process.env.MAX_LLAMADAS_CONCURRENTES ?? 5));
+const MAX_LLAMADAS = Math.max(1, Number(process.env.MAX_LLAMADAS_CONCURRENTES) || 5);
 let llamadasActivas = 0;
 
-type TwilioStart = { event: "start"; start: { streamSid: string; callSid?: string; customParameters?: Record<string, string> } };
-type TwilioMedia = { event: "media"; streamSid: string; media: { payload: string } };
-type TwilioStop = { event: "stop"; streamSid: string };
-type TwilioEvent = TwilioStart | TwilioMedia | TwilioStop;
+/** Nada del stream llega a la base sin pasar por este esquema (regla 8). */
+const twilioEventSchema = z.discriminatedUnion("event", [
+  z.object({
+    event: z.literal("start"),
+    start: z.object({
+      streamSid: z.string().min(1),
+      callSid: z.string().optional(),
+      customParameters: z.record(z.string()).optional(),
+    }),
+  }),
+  z.object({
+    event: z.literal("media"),
+    media: z.object({ payload: z.string().min(1) }),
+  }),
+  z.object({ event: z.literal("stop") }),
+]);
+
+type TwilioEvent = z.infer<typeof twilioEventSchema>;
 
 function parseTwilioEvent(raw: string): TwilioEvent | null {
+  let bruto: unknown;
   try {
-    const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed === "object" && parsed !== null && "event" in parsed && (parsed.event === "start" || parsed.event === "media" || parsed.event === "stop")) return parsed as TwilioEvent;
-  } catch { /* ignore malformed frames */ }
-  return null;
+    bruto = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  const resultado = twilioEventSchema.safeParse(bruto);
+  return resultado.success ? resultado.data : null;
 }
 
 export const streamRoutes: FastifyPluginAsync = async (app) => {
@@ -45,7 +64,7 @@ export const streamRoutes: FastifyPluginAsync = async (app) => {
     };
 
     socket.on("message", (raw: RawData) => {
-      const event = parseTwilioEvent(raw.toString());
+      const event = parseTwilioEvent(textoDeFrame(raw));
       if (!event) return;
       if (event.event === "start") {
         if (agent) return;
@@ -75,6 +94,12 @@ export const streamRoutes: FastifyPluginAsync = async (app) => {
           onAudio: (audio) => send({ event: "media", streamSid, media: { payload: audio } }),
           onBargeIn: () => send({ event: "clear", streamSid }),
           onError: (message) => request.log.error({ streamSid, message }, "Error de Wari"),
+          onFatal: (message) => {
+            // Regla 20: error real y llamada cortada, nunca silencio indefinido.
+            request.log.error({ streamSid, message }, "Sesión de voz caída: se corta la llamada");
+            close();
+            socket.close();
+          },
         });
       } else if (event.event === "media") {
         agent?.sendAudio(event.media.payload);

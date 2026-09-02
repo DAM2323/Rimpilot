@@ -1,11 +1,18 @@
 import type { FastifyPluginAsync } from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import twilio from "twilio";
+import { z } from "zod";
 import { crearStreamToken } from "../agent/streamToken.js";
 import { obtenerOCrearVendedor } from "../services/libroContable.js";
 
+/** Regla 8: el cuerpo del webhook se valida antes de tocar la base. */
+const voiceBodySchema = z.object({
+  From: z.string().trim().min(1).max(32).regex(/^\+?[0-9()\-.\s]+$/, "Número de origen con formato inesperado"),
+  CallSid: z.string().trim().max(64).optional(),
+}).passthrough();
+
 function escapeXml(value: string): string {
-  return value.replace(/[<>&'\"]/g, (character) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", "\"": "&quot;" })[character] ?? character);
+  return value.replace(/[<>&'"]/g, (character) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", "\"": "&quot;" })[character] ?? character);
 }
 
 function mediaStreamUrl(): string {
@@ -41,9 +48,12 @@ export const twilioRoutes: FastifyPluginAsync = async (app) => {
     if (!isSignedTwilioRequest(request.headers, body, request.raw.url ?? "/twilio/voice")) {
       return reply.code(403).send({ error: "Firma de Twilio inválida." });
     }
-    const phone = body.From;
-    if (!phone) return reply.code(400).send({ error: "Twilio no envió el número de origen." });
-    const callSid = body.CallSid ?? "";
+    const datos = voiceBodySchema.safeParse(body);
+    if (!datos.success) {
+      return reply.code(400).send({ error: "Cuerpo del webhook inválido." });
+    }
+    const phone = datos.data.From;
+    const callSid = datos.data.CallSid ?? "";
     const vendedor = await obtenerOCrearVendedor(phone);
     const streamUrl = mediaStreamUrl();
     const token = crearStreamToken(vendedor.id);

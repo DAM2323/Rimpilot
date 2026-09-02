@@ -71,6 +71,7 @@ pnpm dev              # backend + dashboard
 pnpm dev:backend      # Fastify en :3001
 pnpm dev:dashboard    # Next.js en :3000
 pnpm typecheck
+pnpm lint
 pnpm build
 ```
 
@@ -84,8 +85,10 @@ pnpm build
 | `PUBLIC_URL` | URL pública del backend, normalmente la URL HTTPS de ngrok en desarrollo. |
 | `STREAM_TOKEN_SECRET` | Firma el token que autoriza el Media Stream. Mínimo 32 caracteres; el backend falla al arrancar una llamada sin él. |
 | `MAX_LLAMADAS_CONCURRENTES` | Tope de sesiones simultáneas de AssemblyAI. Por defecto 5. |
+| `ASSEMBLYAI_VOICE_URL` | Opcional. Solo para apuntar a un mock en pruebas; vacío usa la API real. |
 | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RIMPILOT_VENDOR_ID` | Van en `packages/dashboard/.env.local`. El servicio consulta solo ese vendedor y la key nunca se expone al navegador. |
 | `RIMPILOT_DASHBOARD_USER`, `RIMPILOT_DASHBOARD_PASSWORD` | Basic Auth del panel, en `packages/dashboard/.env.local`. Obligatorias: sin ellas el panel devuelve 503. |
+| `NEXT_PUBLIC_SITE_URL` | URL pública del panel; alimenta metadata, Open Graph y `sitemap.xml`. |
 
 ## Roadmap
 

@@ -2,28 +2,53 @@ import WebSocket from "ws";
 import { z } from "zod";
 import { WARI_GREETING, WARI_SYSTEM_PROMPT } from "./systemPrompt.js";
 import { cobrarSchema, gastoSchema, resumenSchema, ventaSchema, herramientas } from "./tools.js";
-import { consultarResumen, registrarMovimiento, type MetodoPago } from "../services/libroContable.js";
+import { textoDeFrame } from "./rawData.js";
+import { consultarResumen, registrarMovimiento } from "../services/libroContable.js";
 
-const voiceUrl = "wss://agents.assemblyai.com/v1/realtime";
+/**
+ * Override solo para pruebas o staging. Se comprueba por verdadero, no con `??`:
+ * copiar `.env.example` deja la variable vacía y `??` la daría por válida.
+ */
+const voiceUrl = process.env.ASSEMBLYAI_VOICE_URL || "wss://agents.assemblyai.com/v1/realtime";
 
-type AgentEvent = { type: string; audio?: string; text?: string; message?: string; session_id?: string; call_id?: string; name?: string; arguments?: unknown };
+type AgentEvent = z.infer<typeof agentEventSchema>;
 type ToolContext = { vendedorId: string; callSid?: string; getTranscript: () => string };
 
+const agentEventSchema = z.object({
+  type: z.string(),
+  audio: z.string().optional(),
+  text: z.string().optional(),
+  message: z.string().optional(),
+  session_id: z.string().optional(),
+  call_id: z.string().optional(),
+  name: z.string().optional(),
+  arguments: z.unknown().optional(),
+}).passthrough();
+
 function parseEvent(raw: WebSocket.RawData): AgentEvent | null {
+  let bruto: unknown;
   try {
-    const parsed: unknown = JSON.parse(raw.toString());
-    return z.object({ type: z.string() }).passthrough().parse(parsed) as AgentEvent;
+    bruto = JSON.parse(textoDeFrame(raw));
   } catch {
     return null;
   }
+  const result = agentEventSchema.safeParse(bruto);
+  return result.success ? result.data : null;
 }
 
+/** Reintentos ante saturación de AssemblyAI antes de cortar la llamada. */
+const MAX_REINTENTOS = 2;
+const ESTADOS_RECUPERABLES = new Set([429, 500, 502, 503, 504]);
+
 export class VoiceAgentBridge {
-  private readonly socket: WebSocket;
+  private socket!: WebSocket;
   private ready = false;
   private latestTranscript = "";
   private pendingToolCalls: AgentEvent[] = [];
   private pendingAudio: string[] = [];
+  private intentos = 0;
+  private reconectando = false;
+  private cerradoPorNosotros = false;
 
   constructor(
     private readonly context: Omit<ToolContext, "getTranscript">,
@@ -32,14 +57,51 @@ export class VoiceAgentBridge {
       onAudio: (audio: string) => void;
       onBargeIn: () => void;
       onError: (message: string) => void;
+      /** La sesión no se puede sostener: hay que cortar la llamada, no dejar al vendedor en silencio. */
+      onFatal: (message: string) => void;
     },
   ) {
     const key = process.env.ASSEMBLYAI_API_KEY;
     if (!key) throw new Error("ASSEMBLYAI_API_KEY es obligatoria.");
+    this.conectar(key);
+  }
+
+  private conectar(key: string): void {
+    this.ready = false;
+    this.reconectando = false;
     this.socket = new WebSocket(voiceUrl, { headers: { Authorization: `Bearer ${key}` } });
     this.socket.on("open", () => this.configure());
     this.socket.on("message", (data) => this.handleEvent(data));
-    this.socket.on("error", (error) => this.handlers.onError(error.message));
+    this.socket.on("unexpected-response", (_peticion, respuesta) => this.manejarRechazo(key, respuesta.statusCode ?? 0));
+    this.socket.on("error", (error) => {
+      if (!this.cerradoPorNosotros && !this.reconectando) this.handlers.onError(error.message);
+    });
+    this.socket.on("close", () => {
+      if (this.cerradoPorNosotros || this.reconectando) return;
+      this.handlers.onFatal("AssemblyAI cerró la sesión de voz.");
+    });
+  }
+
+  /**
+   * Regla 20 traducida a esta API: no hay "modelo más liviano" al que caer, así
+   * que ante saturación se reintenta con espera creciente y, si no cede, se
+   * corta con un error real en lugar de dejar la llamada muda.
+   */
+  private manejarRechazo(key: string, estado: number): void {
+    const recuperable = ESTADOS_RECUPERABLES.has(estado);
+    if (recuperable && this.intentos < MAX_REINTENTOS) {
+      this.intentos += 1;
+      const espera = 500 * this.intentos;
+      this.reconectando = true;
+      this.handlers.onError(`AssemblyAI respondió HTTP ${estado}; reintento ${this.intentos} de ${MAX_REINTENTOS} en ${espera} ms.`);
+      setTimeout(() => {
+        if (!this.cerradoPorNosotros) this.conectar(key);
+      }, espera);
+      return;
+    }
+    this.handlers.onFatal(recuperable
+      ? `AssemblyAI sigue saturada (HTTP ${estado}) después de ${this.intentos} reintentos.`
+      : `AssemblyAI rechazó la sesión con HTTP ${estado}.`);
   }
 
   sendAudio(audio: string): void {
@@ -51,6 +113,7 @@ export class VoiceAgentBridge {
   }
 
   close(): void {
+    this.cerradoPorNosotros = true;
     if (this.socket.readyState === WebSocket.OPEN) this.send({ type: "session.end" });
     this.socket.close();
   }
@@ -122,14 +185,14 @@ export class VoiceAgentBridge {
       const args = ventaSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
         tipo: "venta", descripcion: args.descripcion, monto: args.monto, contraparte: args.contraparte,
-        metodoPago: args.metodo_pago as MetodoPago | undefined, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
+        metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
     }
     if (name === "registrar_gasto") {
       const args = gastoSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
-        tipo: "gasto", descripcion: args.descripcion, monto: args.monto, metodoPago: args.metodo_pago as MetodoPago | undefined, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
+        tipo: "gasto", descripcion: args.descripcion, monto: args.monto, metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
     }
