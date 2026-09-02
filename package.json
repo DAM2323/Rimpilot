@@ -1,0 +1,15 @@
+{
+  "name": "rimpilot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Contabilidad por voz para vendedores informales.",
+  "packageManager": "pnpm@11.19.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @rimpilot/backend --filter @rimpilot/dashboard dev",
+    "dev:backend": "pnpm --filter @rimpilot/backend dev",
+    "dev:dashboard": "pnpm --filter @rimpilot/dashboard dev",
+    "build": "pnpm --filter @rimpilot/backend build && pnpm --filter @rimpilot/dashboard build",
+    "typecheck": "pnpm --filter @rimpilot/backend typecheck && pnpm --filter @rimpilot/dashboard typecheck"
+  }
+}
