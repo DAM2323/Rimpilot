@@ -16,7 +16,7 @@ Una aplicación financiera moderna vista bajo la luz de un puesto de mercado al 
   --rp-line: oklch(0.88 0.018 120);
   --rp-primary: oklch(0.36 0.09 120);
   --rp-primary-hover: oklch(0.30 0.085 120);
-  --rp-coral: oklch(0.61 0.17 32);
+  --rp-coral: oklch(0.52 0.17 32);
   --rp-coral-soft: oklch(0.95 0.035 32);
   --rp-success: oklch(0.58 0.13 145);
 }

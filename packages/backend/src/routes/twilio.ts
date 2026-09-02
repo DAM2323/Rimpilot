@@ -1,5 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
+import rateLimit from "@fastify/rate-limit";
 import twilio from "twilio";
+import { crearStreamToken } from "../agent/streamToken.js";
 import { obtenerOCrearVendedor } from "../services/libroContable.js";
 
 function escapeXml(value: string): string {
@@ -29,6 +31,11 @@ function isSignedTwilioRequest(headers: Record<string, string | string[] | undef
 }
 
 export const twilioRoutes: FastifyPluginAsync = async (app) => {
+  // Cada llamada abre una sesión facturable de AssemblyAI, así que el webhook
+  // se limita aunque venga firmado. El almacén en memoria alcanza porque el
+  // backend es un proceso Fastify de larga vida; en serverless no serviría.
+  await app.register(rateLimit, { max: 20, timeWindow: "1 minute", cache: 5000 });
+
   app.post("/voice", async (request, reply) => {
     const body = request.body as Record<string, string | undefined>;
     if (!isSignedTwilioRequest(request.headers, body, request.raw.url ?? "/twilio/voice")) {
@@ -39,7 +46,8 @@ export const twilioRoutes: FastifyPluginAsync = async (app) => {
     const callSid = body.CallSid ?? "";
     const vendedor = await obtenerOCrearVendedor(phone);
     const streamUrl = mediaStreamUrl();
-    const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="${escapeXml(streamUrl)}"><Parameter name="vendedorId" value="${escapeXml(vendedor.id)}"/><Parameter name="caller" value="${escapeXml(phone)}"/><Parameter name="callSid" value="${escapeXml(callSid)}"/></Stream></Connect></Response>`;
+    const token = crearStreamToken(vendedor.id);
+    const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="${escapeXml(streamUrl)}"><Parameter name="token" value="${escapeXml(token)}"/><Parameter name="callSid" value="${escapeXml(callSid)}"/></Stream></Connect></Response>`;
     return reply.type("text/xml").send(twiml);
   });
 };
