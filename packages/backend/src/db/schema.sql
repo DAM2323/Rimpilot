@@ -50,6 +50,6 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
-INSERT INTO vendedores (telefono, nombre, nombre_negocio)
-VALUES ('+51999999999', 'María', 'Pollería María')
-ON CONFLICT (telefono) DO NOTHING;
+-- Este archivo solo crea estructura. El vendedor inicial se carga con
+-- `pnpm --filter @rimpilot/backend seed`, que exige los datos por variables de
+-- entorno y no tiene ninguna identidad por defecto.

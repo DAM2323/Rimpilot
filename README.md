@@ -23,8 +23,8 @@ pnpm install
 Copy-Item .env.example .env  # PowerShell en Windows
 ```
 
-1. Crea un proyecto en Supabase y ejecuta todo [packages/backend/src/db/schema.sql](packages/backend/src/db/schema.sql) en el SQL Editor.
-2. Completa `DATABASE_URL` y las credenciales de AssemblyAI/Twilio en `.env`.
+1. Crea un proyecto en Supabase y ejecuta todo [packages/backend/src/db/schema.sql](packages/backend/src/db/schema.sql) en el SQL Editor. Ese archivo solo crea estructura: no deja ningún vendedor cargado.
+2. Completa `DATABASE_URL` y las credenciales de AssemblyAI/Twilio en `.env`. Rellena también `SEED_VENDOR_TELEFONO` (y opcionalmente `SEED_VENDOR_NOMBRE` y `SEED_VENDOR_NEGOCIO`) y crea el vendedor con `pnpm --filter @rimpilot/backend seed`. El script imprime la línea `RIMPILOT_VENDOR_ID=…` que necesitás en el paso siguiente, y falla si le falta el teléfono en lugar de inventar uno.
 3. Copia `packages/dashboard/.env.local.example` como `packages/dashboard/.env.local`. Añade ahí `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y el UUID de `RIMPILOT_VENDOR_ID`. El dashboard es de un negocio por despliegue: todas las consultas se limitan a ese UUID y no hay datos de muestra ocultos. Añade también `RIMPILOT_DASHBOARD_USER` y `RIMPILOT_DASHBOARD_PASSWORD` (mínimo 16 caracteres): el panel pide Basic Auth y **sin esas dos variables responde 503**, porque muestra el libro contable y las transcripciones de una persona real.
 4. Arranca el backend y abre un túnel público:
 
@@ -86,6 +86,7 @@ pnpm build
 | `STREAM_TOKEN_SECRET` | Firma el token que autoriza el Media Stream. Mínimo 32 caracteres; el backend falla al arrancar una llamada sin él. |
 | `MAX_LLAMADAS_CONCURRENTES` | Tope de sesiones simultáneas de AssemblyAI. Por defecto 5. |
 | `ASSEMBLYAI_VOICE_URL` | Opcional. Solo para apuntar a un mock en pruebas; vacío usa la API real. |
+| `SEED_VENDOR_TELEFONO`, `SEED_VENDOR_NOMBRE`, `SEED_VENDOR_NEGOCIO` | Vendedor inicial para `pnpm --filter @rimpilot/backend seed`. El teléfono es obligatorio; nombre y negocio quedan en `NULL` si no los das. |
 | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RIMPILOT_VENDOR_ID` | Van en `packages/dashboard/.env.local`. El servicio consulta solo ese vendedor y la key nunca se expone al navegador. |
 | `RIMPILOT_DASHBOARD_USER`, `RIMPILOT_DASHBOARD_PASSWORD` | Basic Auth del panel, en `packages/dashboard/.env.local`. Obligatorias: sin ellas el panel devuelve 503. |
 | `NEXT_PUBLIC_SITE_URL` | URL pública del panel; alimenta metadata, Open Graph y `sitemap.xml`. |
