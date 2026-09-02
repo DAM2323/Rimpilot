@@ -68,7 +68,7 @@ export class VoiceAgentBridge {
           keyterms: ["Yape", "Plin", "fiado", "RIMPILOT"],
           turn_detection: { min_silence: 800, max_silence: 2200, interrupt_response: true },
         },
-        output: { voice: "alba", format: { encoding: "audio/pcmu" } },
+        output: { voice: "diego", format: { encoding: "audio/pcmu" } },
       },
     });
   }
@@ -83,9 +83,12 @@ export class VoiceAgentBridge {
     } else if (event.type === "reply.audio" && event.audio) {
       this.handlers.onAudio(event.audio);
     } else if (event.type === "input.speech.started") {
+      this.latestTranscript = "";
       this.handlers.onBargeIn();
     } else if (event.type === "transcript.user.delta" && event.text) {
-      this.latestTranscript += event.text;
+      this.latestTranscript = event.text.startsWith(this.latestTranscript)
+        ? event.text
+        : `${this.latestTranscript}${this.latestTranscript && !this.latestTranscript.endsWith(" ") ? " " : ""}${event.text}`;
     } else if (event.type === "transcript.user" && event.text) {
       this.latestTranscript = event.text;
     } else if (event.type === "tool.call") {
@@ -94,6 +97,8 @@ export class VoiceAgentBridge {
       void this.respondToPendingTools();
     } else if (event.type === "session.error") {
       this.handlers.onError(event.message ?? event.text ?? "AssemblyAI devolvió un error de sesión.");
+    } else if (event.type === "error") {
+      this.handlers.onError(event.message ?? event.text ?? "AssemblyAI devolvió un error.");
     }
   }
 

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS movimientos (
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE movimientos DROP CONSTRAINT IF EXISTS movimientos_venta_no_fiada;
 ALTER TABLE movimientos ADD CONSTRAINT movimientos_venta_no_fiada
   CHECK (NOT (tipo = 'venta' AND metodo_pago = 'fiado'));
 

@@ -22,7 +22,6 @@ function requestUrl(path: string): string {
 }
 
 function isSignedTwilioRequest(headers: Record<string, string | string[] | undefined>, body: Record<string, string | undefined>, path: string): boolean {
-  if (process.env.TWILIO_VALIDATE_SIGNATURE === "false" && process.env.NODE_ENV !== "production") return true;
   const token = process.env.TWILIO_AUTH_TOKEN;
   const signature = headers["x-twilio-signature"];
   if (!token || typeof signature !== "string") return false;
