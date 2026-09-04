@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+// Inter variable, autohospedada: la CSP declara font-src 'self', así que una
+// fuente servida desde un CDN externo quedaría bloqueada.
+import "@fontsource-variable/inter";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";

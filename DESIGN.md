@@ -50,8 +50,21 @@ Two of them cannot be used as drawn:
 
 ## Typography
 
-System sans stack, fixed product scale: 0.75rem, 0.875rem, 1rem, 1.125rem, 1.375rem
-and 2rem. Data uses tabular numerals. Headings are tightly tracked; body text is not.
+**Inter Variable**, self-hosted from `@fontsource-variable/inter` (SIL Open Font
+License). It is not loaded from a CDN: the CSP declares `font-src 'self'`, so an
+external font host would be blocked, and self-hosting also removes the layout shift
+of a late-arriving face.
+
+Only the Latin subset is downloaded — roughly 56 KB — because the package ships
+`unicode-range` per subset and the browser fetches what the page actually needs.
+
+Fixed product scale: 0.75rem, 0.875rem, 1rem, 1.125rem, 1.375rem and 2rem. Headings
+are tightly tracked; body text is not.
+
+**Money always uses tabular numerals** (`font-variant-numeric: tabular-nums` plus
+`font-feature-settings: "tnum"`). Inter ships real tabular figures, so amounts in a
+column line up digit for digit — a proportional `1` next to a `7` makes a ledger
+harder to scan than any colour choice.
 
 ## Components
 
