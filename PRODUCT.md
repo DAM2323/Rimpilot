@@ -22,11 +22,11 @@ La contabilidad que empieza con lo que el vendedor dice, incluso cuando nunca us
 
 ## Brand Personality
 
-Claro, cercano y confiable. La interfaz se siente como una app financiera moderna: seria con el dinero, simple con el lenguaje y nunca intimidante.
+Claro, cercano y confiable. La interfaz se siente como una app financiera moderna: seria con el dinero, simple con el lenguaje y nunca intimidante. El lenguaje visual sale del logo: fondo navy profundo con un degradado violeta → azul → cian y una onda de sonido. Es un instrumento de voz para la plata: oscuro, preciso y tranquilo, donde la luz marca lo que importa.
 
 ## Anti-references
 
-Evitar jerga contable, estética de plantilla SaaS, fondos crema, gráficos decorativos y pantallas saturadas de tarjetas o métricas sin contexto.
+Evitar jerga contable, estética de plantilla SaaS, gráficos decorativos y pantallas saturadas de tarjetas o métricas sin contexto. En la paleta oscura: nada de neón por decoración ni degradados sobre superficies de datos — el degradado es firma de marca, no relleno.
 
 ## Design Principles
 

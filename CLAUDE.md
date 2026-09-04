@@ -62,6 +62,20 @@ Son las herramientas con las que se audita el proyecto. Cada una tiene una condi
 
 **Regla que aplica a las cuatro:** antes de ejecutar cualquiera de estas herramientas, dar el diagnóstico de qué hace, qué necesita y qué cambiaría. El usuario aprueba.
 
+## Identidad visual
+
+Todo diseño de este proyecto —panel, portadas, slides, imágenes sociales, cualquier
+pieza— usa la paleta derivada del logo. Está definida y medida en `DESIGN.md`; esa
+es la fuente de verdad, no una aproximación de memoria.
+
+- Fondo navy `#080D1A`, degradado de marca violeta `#8B5CF6` → azul `#3B82F6` → cian `#22D3EE`.
+- Cian para lo que entró, rosa `#FB7185` para lo que salió o está por cobrar, siempre
+  con signo e ícono además del color (regla 14 y principio de producto).
+- El violeta del logo `#8B5CF6` **nunca** lleva texto encima: mide 4.23:1 y reprueba AA.
+  Va en degradados y rellenos; para texto violeta, `#A78BFA`.
+- Un relleno de marca lleva texto oscuro, nunca blanco: blanco sobre `#3B82F6` es 3.68:1.
+- Antes de fijar cualquier color nuevo, medir su contraste contra el fondo real.
+
 ## Notas de este proyecto
 
 - **Stack:** monorepo pnpm. `packages/backend` es Fastify (no Next.js): las reglas 3 y 4 se aplican con un hook `onSend`. `packages/dashboard` es Next.js 14 App Router: se aplican en `next.config.mjs` o en `middleware.ts`.
