@@ -109,5 +109,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|opengraph-image|robots.txt|sitemap.xml|llms.txt).*)"],
+  // El favicon, la imagen social y el logo quedan fuera de la puerta: no llevan
+  // datos del libro y los necesita el navegador antes de autenticarse.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|logo.png|logo-simbolo.png|opengraph-image|robots.txt|sitemap.xml|llms.txt).*)"],
 };

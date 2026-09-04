@@ -1,4 +1,6 @@
+import Image from "next/image";
 import { Filter, Mic, SlidersHorizontal } from "lucide-react";
+import marca from "../public/logo-simbolo.png";
 import { GraficoFlujoCaja } from "../components/GraficoFlujoCaja";
 import { ListaMovimientos } from "../components/ListaMovimientos";
 import { LiveRefresh } from "../components/LiveRefresh";
@@ -22,7 +24,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { tipo
   const nombre = vendedor?.nombre ?? vendedor?.nombre_negocio ?? "tu negocio";
   return <main className="app-shell antialiased">
     <LiveRefresh />
-    <aside className="sidebar"><div className="brand-mark">R</div><div className="sidebar-line active"/><div className="sidebar-line"/><div className="sidebar-line"/></aside>
+    <aside className="sidebar"><Image className="brand-mark" src={marca} alt="RIMPILOT" width={44} height={35} priority/><div className="sidebar-line active"/><div className="sidebar-line"/><div className="sidebar-line"/></aside>
     <section className="workspace">
       <header className="topbar"><div><p className="kicker">{fecha}</p><h1>Buenos días, {nombre}</h1></div><div className="voice-status"><span className="pulse"/><Mic size={17} aria-hidden="true"/> Wari está listo</div></header>
       {!configured && <aside className="configuration-warning" role="status"><strong>Panel sin conectar.</strong> Configura las variables en <code>packages/dashboard/.env.local</code> para mostrar el libro real. No se muestran datos de demostración.</aside>}

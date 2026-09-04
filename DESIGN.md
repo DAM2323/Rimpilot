@@ -23,26 +23,30 @@ a guess.**
   --line-strong: #5470A8;   /* form control borders — 3.63:1, meets 1.4.11   */
   --ink: #F2F5FF;           /* primary text — 17.81:1 on bg                  */
   --muted: #9AABCE;         /* secondary text — 8.40:1 on bg                 */
-  --cyan: #22D3EE;          /* income, balance, focus — 10.73:1              */
-  --blue: #60A5FA;          /* brand text, links — 7.63:1                    */
-  --violet: #A78BFA;        /* accent icons — 7.13:1                         */
-  --rose: #FB7185;          /* expenses, receivables — 7.21:1                */
-  --on-accent: #080D1A;     /* text on a brand fill — 10.73:1 on cyan        */
-  --grad: linear-gradient(120deg, #8B5CF6 0%, #3B82F6 52%, #22D3EE 100%);
+  --cyan: #01B2F8;          /* income, balance, focus — 7.43:1               */
+  --violet: #A78BFA;        /* accent icons — 6.58:1                         */
+  --rose: #FB7185;          /* expenses, receivables — 6.65:1                */
+  --on-accent: #080D1A;     /* text on a brand fill — 7.43:1 on cyan         */
+  --grad: linear-gradient(120deg, #824CE8 0%, #4F73EF 52%, #01B2F8 100%);
 }
 ```
 
 ### Rules that are not negotiable
 
-- **The logo's violet `#8B5CF6` never carries text.** It measures 4.23:1 on
+The three gradient stops are sampled from the logo file itself, not approximated.
+Two of them cannot be used as drawn:
+
+- **The logo's violet `#824CE8` never carries text.** It measures 3.53:1 on
   `--surface`, below AA. It exists in the gradient and in fills only; for violet
   text use `--violet` (`#A78BFA`).
-- **A brand fill takes dark text, never white.** White on `#3B82F6` is 3.68:1 and
-  fails. Primary buttons are cyan with `--on-accent` on top.
+- **The logo's blue `#4F73EF` never carries text either** — 4.29:1, also short.
+  It is a gradient stop only.
+- **A brand fill takes dark text, never white.** Primary buttons are cyan with
+  `--on-accent` on top.
 - **Money is distinguished by meaning, not only colour.** Cyan for what came in,
   rose for what went out or is still owed — always paired with a `+` / `−` sign and
   a distinct icon, so the ledger reads without relying on hue.
-- Focus is a 3px cyan ring at 10.73:1. It is never removed.
+- Focus is a 3px cyan ring at 7.43:1. It is never removed.
 
 ## Typography
 
@@ -59,10 +63,19 @@ state works without hover.
 
 ## The logo
 
-The mark is an `R` cut by a sound wave, in the brand gradient on navy. The favicon
-(`packages/dashboard/app/icon.svg`) is a simplified redraw for small sizes: at 16px
-the original's inner counter-forms fill in.
+The source file lives at `images/logo.png` (1254×1254, navy background baked in).
+Everything else is derived from it, never redrawn:
 
-> The full-resolution logo file is not in the repository yet. Add it under
-> `packages/dashboard/public/` and reference it from the marketing surfaces that
-> need the complete lockup.
+| File | What it is |
+| --- | --- |
+| `packages/dashboard/public/logo.png` | Full lockup, background keyed to transparent, 880px wide |
+| `packages/dashboard/public/logo-simbolo.png` | The mark alone (R + wave), transparent — used in the app rail |
+| `packages/dashboard/app/icon.png` | 512×512 favicon, the mark on the logo's own navy |
+
+The background is keyed out with a soft alpha ramp rather than a hard threshold, so
+the glow and the antialiased edges survive. That lets the lockup sit on `--bg`
+without a visible plate.
+
+These three files, the Open Graph image and the middleware matcher move together:
+the matcher must keep the logo and icon outside the auth gate, or the browser cannot
+fetch the favicon before signing in.
