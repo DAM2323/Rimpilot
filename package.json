@@ -5,7 +5,7 @@
   "description": "Contabilidad por voz para vendedores informales.",
   "packageManager": "pnpm@11.19.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13"
   },
   "scripts": {
     "dev": "pnpm --parallel --filter @rimpilot/backend --filter @rimpilot/dashboard dev",
