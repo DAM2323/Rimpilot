@@ -76,6 +76,12 @@ export class VoiceAgentBridge {
        * el vendedor (y el jurado) necesita ver en pantalla que fue escuchado.
        */
       onTranscript?: (texto: string, final: boolean) => void;
+      /**
+       * Cada evento que llega de AssemblyAI, con si lo entendimos o no. Los
+       * nombres de los eventos son de la API, no nuestros: si alguno cambia o
+       * nos equivocamos, sin esto el síntoma es silencio y nada en el log.
+       */
+      onEvento?: (tipo: string, manejado: boolean) => void;
       onError: (message: string) => void;
       /** La sesión no se puede sostener: hay que cortar la llamada, no dejar al vendedor en silencio. */
       onFatal: (message: string) => void;
@@ -184,7 +190,11 @@ export class VoiceAgentBridge {
       this.handlers.onError(event.message ?? event.text ?? "AssemblyAI devolvió un error de sesión.");
     } else if (event.type === "error") {
       this.handlers.onError(event.message ?? event.text ?? "AssemblyAI devolvió un error.");
+    } else {
+      this.handlers.onEvento?.(event.type, false);
+      return;
     }
+    this.handlers.onEvento?.(event.type, true);
   }
 
   private async respondToPendingTools(): Promise<void> {
