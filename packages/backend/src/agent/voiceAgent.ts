@@ -3,7 +3,7 @@ import { z } from "zod";
 import { WARI_GREETING, WARI_SYSTEM_PROMPT } from "./systemPrompt.js";
 import { gastoSchema, resumenSchema, retiroSchema, ventaSchema, herramientas } from "./tools.js";
 import { textoDeFrame } from "./rawData.js";
-import { consultarResumen, registrarMovimiento } from "../services/libroContable.js";
+import { registrarMovimiento, resumenParaCierre } from "../services/libroContable.js";
 
 /**
  * Override solo para pruebas o staging. Se comprueba por verdadero, no con `??`:
@@ -229,7 +229,7 @@ export class VoiceAgentBridge {
     }
     if (name === "consultar_resumen_del_dia") {
       const args = resumenSchema.parse(rawArguments);
-      const summary = await consultarResumen(this.context.vendedorId, args.fecha);
+      const summary = await resumenParaCierre(this.context.vendedorId, args.fecha);
       return { ok: true, ...summary };
     }
     throw new Error(`Herramienta desconocida: ${name}`);

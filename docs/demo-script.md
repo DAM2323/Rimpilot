@@ -24,6 +24,8 @@ Vendiste S/ 75 pero en la caja hay S/ 40.
 
 Esa resta es todo el producto. El vendedor informal sabe cuánto vendió y no sabe por qué le falta plata al final del día; la respuesta casi siempre es la que nadie anota: se sacó algo para él. RIMPILOT no se lo explica ni se lo aconseja — se lo muestra con sus propios números.
 
+Si ya hay una semana cargada, Wari cierra con una línea más: «esta semana vendiste 270 y sacaste 83 para ti, 1 de cada 3 soles que vendiste». La misma frase está en el panel, debajo de la tarjeta de retiros. La calcula el código; Wari no opina sobre ella.
+
 5. Abre cualquier movimiento: se ve el fragmento exacto que dijo la persona y que originó ese registro. Nada de lo que hay en el libro salió de una suposición.
 
 ## Si el jurado quiere probarlo

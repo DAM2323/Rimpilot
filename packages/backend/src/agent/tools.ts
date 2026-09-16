@@ -50,7 +50,7 @@ export const herramientas = [
   {
     type: "function",
     name: "consultar_resumen_del_dia",
-    description: "Obtiene ventas, gastos, retiros y caja del día para leérselos al vendedor.",
+    description: "Obtiene ventas, gastos, retiros y caja del día, y en 'semana' la proporción de lo vendido que la persona sacó para ella en los últimos siete días.",
     parameters: {
       type: "object",
       properties: { fecha: { type: "string", description: "Fecha YYYY-MM-DD; si no se indica, hoy" } },

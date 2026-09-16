@@ -12,6 +12,7 @@ RIMPILOT fue creado desde cero para el AssemblyAI Voice Agent Hackathon 2026. El
 - Llamada entrante por Twilio Media Streams, para el vendedor que no tiene datos en ese momento.
 - Un solo puente de voz para los dos canales: G.711 μ-law (`audio/pcmu`) para el teléfono y PCM16 a 24 kHz (`audio/pcm`) para el navegador, sin recodificar audio en ninguno de los dos.
 - Wari, agente conversacional en español con cuatro herramientas: venta, gasto, **retiro personal** y resumen diario. Antes de cerrar pregunta una vez «¿sacaste algo de la caja para ti hoy?», porque es lo que nadie anota.
+- La proporción de la semana: cuánto de lo vendido se llevó la persona, en los últimos 7 días. La calcula el código y Wari la lee tal cual; es un hecho sobre su propia plata, no un consejo.
 - PostgreSQL/Supabase con trazabilidad: cada movimiento conserva el fragmento de transcripción que lo originó.
 - Dashboard Next.js responsive con resumen de caja, filtros, detalle auditable, gráfico de 7 días y actualización automática sin recargar.
 
