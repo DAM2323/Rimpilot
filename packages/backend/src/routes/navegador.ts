@@ -168,6 +168,8 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
             }
             request.log.info({ tipo, manejado }, manejado ? "Evento de AssemblyAI" : "Evento de AssemblyAI que no sabemos manejar");
           },
+          onHerramienta: (nombre, argumentos, resultado) =>
+            request.log.info({ herramienta: nombre, argumentos, resultado }, "Wari pidió una herramienta"),
           onError: (mensajeError) => {
             request.log.error({ mensaje: mensajeError }, "Error de Wari en el navegador");
             // Antes esto moría en el log del servidor: el vendedor veía el

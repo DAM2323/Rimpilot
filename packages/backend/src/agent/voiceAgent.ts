@@ -94,6 +94,12 @@ export class VoiceAgentBridge {
        * nos equivocamos, sin esto el síntoma es silencio y nada en el log.
        */
       onEvento?: (tipo: string, manejado: boolean, evento: Record<string, unknown>) => void;
+      /**
+       * Cada herramienta que Wari pide, con lo que devolvió. Wari puede decir
+       * que anotó algo sin haberlo pedido nunca, así que la palabra del modelo
+       * no alcanza: esto deja constancia de lo que pasó de verdad.
+       */
+      onHerramienta?: (nombre: string, argumentos: unknown, resultado: Record<string, unknown>) => void;
       onError: (message: string) => void;
       /** La sesión no se puede sostener: hay que cortar la llamada, no dejar al vendedor en silencio. */
       onFatal: (message: string) => void;
@@ -229,11 +235,14 @@ export class VoiceAgentBridge {
 
   private async responderHerramienta(call: AgentEvent): Promise<void> {
     if (!call.call_id || !call.name) return;
+    const argumentos = VoiceAgentBridge.argumentos(call);
     try {
-      const result = await this.executeTool(call.name, VoiceAgentBridge.argumentos(call));
+      const result = await this.executeTool(call.name, argumentos);
+      this.handlers.onHerramienta?.(call.name, argumentos, result);
       this.send({ type: "tool.result", call_id: call.call_id, result: JSON.stringify(result), is_error: false });
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudo registrar el movimiento.";
+      this.handlers.onHerramienta?.(call.name, argumentos, { ok: false, message });
       this.send({ type: "tool.result", call_id: call.call_id, result: JSON.stringify({ ok: false, message }), is_error: true });
     }
   }
