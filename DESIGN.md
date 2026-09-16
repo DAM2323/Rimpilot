@@ -43,9 +43,16 @@ Two of them cannot be used as drawn:
   It is a gradient stop only.
 - **A brand fill takes dark text, never white.** Primary buttons are cyan with
   `--on-accent` on top.
-- **Money is distinguished by meaning, not only colour.** Cyan for what came in,
-  rose for what went out or is still owed — always paired with a `+` / `−` sign and
-  a distinct icon, so the ledger reads without relying on hue.
+- **Money is distinguished by meaning, not only colour.** Three flows, three hues:
+  cyan for what came in, rose for what went out *for the business*, violet
+  (`--violet`, 6.58:1) for what the vendor took out *for themselves*. Both
+  outflows carry a `−` sign and a distinct icon, so a reader who cannot separate
+  rose from violet still reads the ledger correctly from the sign, the icon and
+  the label.
+- **Violet earns a data role here, and only here.** It is the one accent left that
+  is neither income nor business expense, and the withdrawal is the number the
+  product exists to surface. `--violet` is the text-safe tint; the logo's
+  `#824CE8` still never carries text.
 - Focus is a 3px cyan ring at 7.43:1. It is never removed.
 
 ## Typography

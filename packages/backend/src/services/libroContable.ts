@@ -1,8 +1,8 @@
 import { sql } from "../db/client.js";
 import { fechaLima, recalcularResumen, type ResumenDelDia } from "./resumen.js";
 
-export type TipoMovimiento = "venta" | "gasto" | "cuenta_por_cobrar" | "cuenta_por_pagar";
-export type MetodoPago = "efectivo" | "yape" | "plin" | "transferencia" | "fiado";
+export type TipoMovimiento = "venta" | "gasto" | "retiro";
+export type MetodoPago = "efectivo" | "yape" | "plin" | "transferencia";
 
 type MovimientoInput = {
   tipo: TipoMovimiento;

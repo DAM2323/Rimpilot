@@ -10,7 +10,7 @@ import { dashboardConfigurado, fechaLima, obtenerFlujo, obtenerMovimientos, obte
 import type { TipoMovimiento } from "../lib/types";
 
 const types: Array<{ value: TipoMovimiento; label: string }> = [
-  { value: "venta", label: "Ventas" }, { value: "gasto", label: "Gastos" }, { value: "cuenta_por_cobrar", label: "Por cobrar" },
+  { value: "venta", label: "Ventas" }, { value: "gasto", label: "Gastos" }, { value: "retiro", label: "Retiros" },
 ];
 
 export const dynamic = "force-dynamic";

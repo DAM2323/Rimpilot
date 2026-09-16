@@ -24,11 +24,12 @@ export default function OpengraphImage() {
             Tu caja, clara.
           </div>
           <div style={{ fontSize: 30, color: "#9AABCE", marginTop: 20, lineHeight: 1.35 }}>
-            Contás tus ventas por teléfono. Wari arma el libro contable.
+            Contás tu día hablando. Wari arma el libro contable.
           </div>
+          {/* Los cuatro números cuentan la resta: vendiste 75 y te quedan 40. */}
           <div style={{ display: "flex", gap: 30, marginTop: 40 }}>
             {[["Ventas", "S/ 75", "#01B2F8"], ["Gastos", "S/ 15", "#FB7185"],
-              ["Caja", "S/ 60", "#01B2F8"], ["Te deben", "S/ 20", "#FB7185"]].map(([l, v, c]) => (
+              ["Sacaste", "S/ 20", "#A78BFA"], ["Caja", "S/ 40", "#01B2F8"]].map(([l, v, c]) => (
               <div key={l} style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontSize: 18, color: "#9AABCE" }}>{l}</span>
                 <span style={{ fontSize: 35, color: c, fontWeight: 800 }}>{v}</span>

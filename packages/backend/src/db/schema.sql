@@ -11,19 +11,18 @@ CREATE TABLE IF NOT EXISTS vendedores (
 CREATE TABLE IF NOT EXISTS movimientos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   vendedor_id UUID NOT NULL REFERENCES vendedores(id),
-  tipo TEXT NOT NULL CHECK (tipo IN ('venta', 'gasto', 'cuenta_por_cobrar', 'cuenta_por_pagar')),
+  -- Tres tipos y no más. 'retiro' es la plata que el vendedor saca de la caja
+  -- para él, no para el negocio: es lo que explica que la caja no cuadre con
+  -- las ventas al final del día.
+  tipo TEXT NOT NULL CHECK (tipo IN ('venta', 'gasto', 'retiro')),
   descripcion TEXT NOT NULL,
   monto NUMERIC(12,2) NOT NULL CHECK (monto > 0),
   contraparte TEXT,
-  metodo_pago TEXT CHECK (metodo_pago IN ('efectivo', 'yape', 'plin', 'transferencia', 'fiado')),
+  metodo_pago TEXT CHECK (metodo_pago IN ('efectivo', 'yape', 'plin', 'transferencia')),
   call_sid TEXT,
   transcripcion TEXT,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-ALTER TABLE movimientos DROP CONSTRAINT IF EXISTS movimientos_venta_no_fiada;
-ALTER TABLE movimientos ADD CONSTRAINT movimientos_venta_no_fiada
-  CHECK (NOT (tipo = 'venta' AND metodo_pago = 'fiado'));
 
 CREATE INDEX IF NOT EXISTS idx_movimientos_vendedor_fecha ON movimientos(vendedor_id, creado_en DESC);
 CREATE INDEX IF NOT EXISTS idx_movimientos_tipo ON movimientos(tipo);
@@ -34,8 +33,9 @@ CREATE TABLE IF NOT EXISTS resumen_diario (
   fecha DATE NOT NULL,
   total_ventas NUMERIC(12,2) NOT NULL DEFAULT 0,
   total_gastos NUMERIC(12,2) NOT NULL DEFAULT 0,
+  total_retiros NUMERIC(12,2) NOT NULL DEFAULT 0,
+  -- caja = ventas − gastos − retiros
   saldo_del_dia NUMERIC(12,2) NOT NULL DEFAULT 0,
-  total_por_cobrar NUMERIC(12,2) NOT NULL DEFAULT 0,
   UNIQUE(vendedor_id, fecha)
 );
 

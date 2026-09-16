@@ -5,7 +5,7 @@ import "@fontsource-variable/inter";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const descripcion = "Libro contable por voz para vendedores informales: contás tu día por teléfono y Wari lo ordena.";
+const descripcion = "Libro contable por voz para vendedores informales: contás tu día hablando y Wari lo ordena, incluida la plata que sacaste de la caja.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

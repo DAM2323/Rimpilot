@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import { z } from "zod";
 import { WARI_GREETING, WARI_SYSTEM_PROMPT } from "./systemPrompt.js";
-import { cobrarSchema, gastoSchema, resumenSchema, ventaSchema, herramientas } from "./tools.js";
+import { gastoSchema, resumenSchema, retiroSchema, ventaSchema, herramientas } from "./tools.js";
 import { textoDeFrame } from "./rawData.js";
 import { consultarResumen, registrarMovimiento } from "../services/libroContable.js";
 
@@ -148,7 +148,7 @@ export class VoiceAgentBridge {
         input: {
           format: this.context.formato,
           language_codes: ["es"],
-          keyterms: ["Yape", "Plin", "fiado", "RIMPILOT"],
+          keyterms: ["Yape", "Plin", "retiro", "caja", "RIMPILOT"],
           turn_detection: { min_silence: 800, max_silence: 2200, interrupt_response: true },
         },
         output: { voice: "diego", format: this.context.formato },
@@ -218,11 +218,12 @@ export class VoiceAgentBridge {
       });
       return { ok: true, movimientoId: result.id };
     }
-    if (name === "registrar_cuenta_por_cobrar") {
-      const args = cobrarSchema.parse(rawArguments);
+    if (name === "registrar_retiro") {
+      const args = retiroSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
-        tipo: "cuenta_por_cobrar", descripcion: args.descripcion ?? "Venta al fiado", monto: args.monto,
-        contraparte: args.contraparte, metodoPago: "fiado", callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
+        // Un retiro no tiene contraparte: la plata se la lleva el propio vendedor.
+        tipo: "retiro", descripcion: args.motivo?.trim() || "Retiro personal", monto: args.monto,
+        metodoPago: args.metodo_pago ?? "efectivo", callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
     }

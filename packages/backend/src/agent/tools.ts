@@ -34,23 +34,23 @@ export const herramientas = [
   },
   {
     type: "function",
-    name: "registrar_cuenta_por_cobrar",
-    description: "Registra dinero que le deben al vendedor por un fiado.",
+    name: "registrar_retiro",
+    description: "Registra plata que la persona sacó de la caja para ella misma o para su casa, no para el negocio: almuerzo, pasaje de los hijos, plata para la familia.",
     parameters: {
       type: "object",
       properties: {
-        contraparte: { type: "string", description: "Quién le debe" },
         monto: { type: "number" },
-        descripcion: { type: "string" },
-        transcripcion: { type: "string", description: "Fragmento exacto dicho por la persona para este fiado" },
+        motivo: { type: "string", description: "Para qué la sacó, si lo dijo: almuerzo, la casa, el colegio" },
+        metodo_pago: { type: "string", enum: ["efectivo", "yape", "plin", "transferencia"] },
+        transcripcion: { type: "string", description: "Fragmento exacto dicho por la persona para este retiro" },
       },
-      required: ["contraparte", "monto"],
+      required: ["monto"],
     },
   },
   {
     type: "function",
     name: "consultar_resumen_del_dia",
-    description: "Obtiene ventas, gastos, saldo y dinero por cobrar del día para leérselo al vendedor.",
+    description: "Obtiene ventas, gastos, retiros y caja del día para leérselos al vendedor.",
     parameters: {
       type: "object",
       properties: { fecha: { type: "string", description: "Fecha YYYY-MM-DD; si no se indica, hoy" } },
@@ -63,5 +63,5 @@ export const ventaSchema = z.object({
   metodo_pago: z.enum(["efectivo", "yape", "plin", "transferencia"]).optional(), contraparte: z.string().optional(), transcripcion: z.string().min(1).optional(),
 });
 export const gastoSchema = z.object({ descripcion: z.string().min(1), monto: z.number().positive(), metodo_pago: z.enum(["efectivo", "yape", "plin", "transferencia"]).optional(), transcripcion: z.string().min(1).optional() });
-export const cobrarSchema = z.object({ contraparte: z.string().min(1), monto: z.number().positive(), descripcion: z.string().optional(), transcripcion: z.string().min(1).optional() });
+export const retiroSchema = z.object({ monto: z.number().positive(), motivo: z.string().optional(), metodo_pago: z.enum(["efectivo", "yape", "plin", "transferencia"]).optional(), transcripcion: z.string().min(1).optional() });
 export const resumenSchema = z.object({ fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() });

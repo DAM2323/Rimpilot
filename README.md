@@ -1,6 +1,8 @@
 # RIMPILOT
 
-**Contabilidad por voz para vendedores informales.** Una persona llama, le cuenta sus ventas, gastos o fiados a Wari en lenguaje natural, y RIMPILOT los organiza en un libro contable que se ve al instante en el dashboard.
+**Contabilidad por voz para vendedores informales.** La persona habla —desde el navegador o por teléfono—, le cuenta a Wari lo que vendió, lo que gastó y lo que sacó de la caja para ella, y RIMPILOT lo ordena en un libro contable que se ve al instante en el dashboard.
+
+El problema que resuelve cabe en una resta: el vendedor sabe que vendió S/ 75 y no sabe por qué en la caja hay S/ 40. Lo que falta casi siempre es la plata que se sacó durante el día y no anotó nadie.
 
 RIMPILOT fue creado desde cero para el AssemblyAI Voice Agent Hackathon 2026. El MVP no evalúa crédito ni se conecta a bancos: crea el historial ordenado que puede habilitar eso en el futuro.
 
@@ -9,7 +11,7 @@ RIMPILOT fue creado desde cero para el AssemblyAI Voice Agent Hackathon 2026. El
 - **Micrófono del navegador**: el vendedor abre el panel, toca un botón y habla. Es el canal principal y el que cualquiera puede probar sin llamar a ningún número.
 - Llamada entrante por Twilio Media Streams, para el vendedor que no tiene datos en ese momento.
 - Un solo puente de voz para los dos canales: G.711 μ-law (`audio/pcmu`) para el teléfono y PCM16 a 24 kHz (`audio/pcm`) para el navegador, sin recodificar audio en ninguno de los dos.
-- Wari, agente conversacional en español con cuatro herramientas: venta, gasto, cuenta por cobrar y resumen diario.
+- Wari, agente conversacional en español con cuatro herramientas: venta, gasto, **retiro personal** y resumen diario. Antes de cerrar pregunta una vez «¿sacaste algo de la caja para ti hoy?», porque es lo que nadie anota.
 - PostgreSQL/Supabase con trazabilidad: cada movimiento conserva el fragmento de transcripción que lo originó.
 - Dashboard Next.js responsive con resumen de caja, filtros, detalle auditable, gráfico de 7 días y actualización automática sin recargar.
 
@@ -25,6 +27,7 @@ Copy-Item .env.example .env  # PowerShell en Windows
 ```
 
 1. Crea un proyecto en Supabase y ejecuta todo [packages/backend/src/db/schema.sql](packages/backend/src/db/schema.sql) en el SQL Editor. Ese archivo solo crea estructura: no deja ningún vendedor cargado.
+   Si tu proyecto es de antes del retiro personal, corré además [002_retiro_personal.sql](packages/backend/src/db/migrations/002_retiro_personal.sql) una sola vez. Archiva en `movimientos_fiado_archivado` los movimientos de fiado antes de borrarlos: no se convierten a retiro, porque una cuenta por cobrar no es plata que salió de la caja.
 2. Completa `DATABASE_URL` y las credenciales de AssemblyAI/Twilio en `.env`. Rellena también `SEED_VENDOR_TELEFONO` (y opcionalmente `SEED_VENDOR_NOMBRE` y `SEED_VENDOR_NEGOCIO`) y crea el vendedor con `pnpm --filter @rimpilot/backend seed`. El script imprime la línea `RIMPILOT_VENDOR_ID=…` que necesitás en el paso siguiente, y falla si le falta el teléfono en lugar de inventar uno.
 3. Copia `packages/dashboard/.env.local.example` como `packages/dashboard/.env.local`. Añade ahí `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y el UUID de `RIMPILOT_VENDOR_ID`. El dashboard es de un negocio por despliegue: todas las consultas se limitan a ese UUID y no hay datos de muestra ocultos. Añade también `RIMPILOT_DASHBOARD_USER` y `RIMPILOT_DASHBOARD_PASSWORD` (mínimo 16 caracteres): el panel pide Basic Auth y **sin esas dos variables responde 503**, porque muestra el libro contable y las transcripciones de una persona real.
 4. Arranca el backend y abre un túnel público:
@@ -57,9 +60,9 @@ El micrófono exige un origen seguro: `localhost` sirve tal cual, pero al desple
 
 Sigue el [guion de demo](docs/demo-script.md):
 
-> “Vendí tres pollos a veinticinco soles cada uno, me pagaron por Yape. Gasté quince en pasaje y a Doña Rosa le fié veinte.”
+> “Vendí tres pollos a veinticinco soles cada uno, me pagaron por Yape. Gasté quince en pasaje y me saqué veinte para el almuerzo.”
 
-Wari registra tres movimientos y, al cerrar, resume ventas `S/ 75`, gastos `S/ 15`, caja `S/ 60` y `S/ 20` por cobrar. El dashboard muestra cada entrada y su transcripción de origen.
+Wari registra tres movimientos y, al cerrar, lee ventas `S/ 75`, gastos `S/ 15`, retiros `S/ 20` y caja `S/ 40`. Vendió 75 y le quedan 40: esa resta es el producto. El dashboard muestra cada entrada y la transcripción que la originó.
 
 ## Arquitectura
 
