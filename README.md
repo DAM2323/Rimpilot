@@ -59,7 +59,10 @@ El micrófono exige un origen seguro: `localhost` sirve tal cual, pero al desple
 
 ## Demo reproducible
 
-Sigue el [guion de demo](docs/demo-script.md):
+Sigue el [guion de demo](docs/demo-script.md), que incluye los subtítulos en
+inglés para el video. Los textos de la convocatoria y las 10 slides están en
+inglés en [docs/hackathon-submission.md](docs/hackathon-submission.md) y
+[docs/slides.md](docs/slides.md).
 
 > “Vendí tres pollos a veinticinco soles cada uno, me pagaron por Yape. Gasté quince en pasaje y me saqué veinte para el almuerzo.”
 

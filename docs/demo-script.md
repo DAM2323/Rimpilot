@@ -32,6 +32,26 @@ Si ya hay una semana cargada, Wari cierra con una línea más: «esta semana ven
 
 Dale el micrófono. Que diga cualquier cosa en español: “vendí dos panes a tres soles”, “gasté diez en bolsas”, “agarré cinco para el pasaje”. Los tres tipos funcionan con lenguaje natural, sin palabras clave.
 
+## Subtítulos en inglés para el video
+
+Lo hablado queda en español: es el producto. Estos son los subtítulos que van
+encima, en el orden en que pasan las cosas.
+
+| Momento | Subtítulo |
+| --- | --- |
+| Panel en cero | Sales · Expenses · What she took out · Cash |
+| Toca el botón | One button. No menus. |
+| Empieza a hablar | “I sold three chickens at twenty-five soles each, paid by Yape.” |
+| Sigue | “I spent fifteen on the bus.” |
+| El retiro | “And I took out twenty for my lunch.” |
+| Aparecen las tarjetas | Three entries, filed while she is still talking |
+| Wari cierra | Sales 75 · Expenses 15 · Withdrawals 20 · **Cash 40** |
+| Sostener el plano | She sold 75. She has 40. Now she knows why. |
+| Frase de la semana | “1 out of every 3 soles you sold.” Computed in code, not by the model. |
+| Abre un movimiento | Every entry keeps the exact words that produced it. |
+
+`S/ 75 ≈ US$ 20`: conviene ponerlo una sola vez, la primera vez que aparece un monto.
+
 ## Variante por teléfono
 
 El canal telefónico sigue existiendo para el vendedor que en ese momento no tiene datos. Es la misma sesión y el mismo libro; solo cambia el códec. Si lo vas a mostrar, llama al número de Twilio y repite el paso 2.
