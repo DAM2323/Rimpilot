@@ -38,6 +38,23 @@ function decodificarBasic(header: string): { usuario: string; clave: string } | 
  * script-src y sin `unsafe-eval` fuera de desarrollo, donde el hot reload de
  * Next lo exige.
  */
+/**
+ * El backend de voz corre en otro puerto (y en otro host al desplegarlo), así que
+ * `connect-src 'self'` bloquearía el WebSocket del micrófono. Se agrega ese
+ * origen y nada más: no se abre `connect-src` a cualquiera.
+ */
+function origenDelBackend(): string[] {
+  const ws = process.env.NEXT_PUBLIC_BACKEND_WS_URL;
+  if (!ws) return [];
+  try {
+    const url = new URL(ws);
+    const http = `${url.protocol === "wss:" ? "https:" : "http:"}//${url.host}`;
+    return [`${url.protocol}//${url.host}`, http];
+  } catch {
+    return [];
+  }
+}
+
 function politicaDeSeguridad(nonce: string, desarrollo: boolean): string {
   return [
     "default-src 'self'",
@@ -47,7 +64,7 @@ function politicaDeSeguridad(nonce: string, desarrollo: boolean): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
     "font-src 'self'",
-    "connect-src 'self'",
+    ["connect-src 'self'", ...origenDelBackend()].join(" "),
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'self'",
@@ -61,7 +78,9 @@ function aplicarCabeceras(respuesta: NextResponse, csp: string): NextResponse {
   respuesta.headers.set("X-Content-Type-Options", "nosniff");
   respuesta.headers.set("X-Frame-Options", "DENY");
   respuesta.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  respuesta.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()");
+  // El micrófono es el canal de entrada del producto, así que se habilita para
+  // el propio origen y nada más; el resto de las capacidades siguen negadas.
+  respuesta.headers.set("Permissions-Policy", "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()");
   if (process.env.NODE_ENV === "production") {
     respuesta.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   }

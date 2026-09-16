@@ -1,15 +1,11 @@
-import type { FastifyPluginAsync } from "fastify";
-import websocket from "@fastify/websocket";
+import type { FastifyPluginCallback } from "fastify";
 import type { RawData } from "ws";
 import { z } from "zod";
 import { textoDeFrame } from "../agent/rawData.js";
-import { VoiceAgentBridge } from "../agent/voiceAgent.js";
+import { FORMATO_TELEFONO, VoiceAgentBridge } from "../agent/voiceAgent.js";
 import { verificarStreamToken } from "../agent/streamToken.js";
+import { sesionesActivas, tomarCupo } from "../agent/cupo.js";
 import { consultarResumen } from "../services/libroContable.js";
-
-/** Tope de sesiones simultáneas de AssemblyAI: la clave es compartida y se paga por uso. */
-const MAX_LLAMADAS = Math.max(1, Number(process.env.MAX_LLAMADAS_CONCURRENTES) || 5);
-let llamadasActivas = 0;
 
 /** Nada del stream llega a la base sin pasar por este esquema (regla 8). */
 const twilioEventSchema = z.discriminatedUnion("event", [
@@ -41,8 +37,7 @@ function parseTwilioEvent(raw: string): TwilioEvent | null {
   return resultado.success ? resultado.data : null;
 }
 
-export const streamRoutes: FastifyPluginAsync = async (app) => {
-  await app.register(websocket);
+export const streamRoutes: FastifyPluginCallback = (app, _opciones, listo) => {
   app.get("/stream", { websocket: true }, (socket, request) => {
     let streamSid = "";
     let agent: VoiceAgentBridge | null = null;
@@ -52,14 +47,12 @@ export const streamRoutes: FastifyPluginAsync = async (app) => {
     const send = (payload: Record<string, unknown>): void => {
       if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(payload));
     };
-    let cupoTomado = false;
+    let liberarCupo: (() => void) | null = null;
     const close = (): void => {
       agent?.close();
       agent = null;
-      if (cupoTomado) {
-        cupoTomado = false;
-        llamadasActivas -= 1;
-      }
+      liberarCupo?.();
+      liberarCupo = null;
       if (vendedorId) void consultarResumen(vendedorId).catch((error: unknown) => request.log.error(error, "No se pudo recalcular el resumen"));
     };
 
@@ -80,16 +73,16 @@ export const streamRoutes: FastifyPluginAsync = async (app) => {
           socket.close();
           return;
         }
-        if (llamadasActivas >= MAX_LLAMADAS) {
-          request.log.warn({ streamSid, llamadasActivas }, "Stream rechazado: tope de llamadas simultáneas");
+        const cupo = tomarCupo();
+        if (!cupo) {
+          request.log.warn({ streamSid, activas: sesionesActivas() }, "Stream rechazado: tope de sesiones simultáneas");
           socket.close();
           return;
         }
         vendedorId = verificado;
-        llamadasActivas += 1;
-        cupoTomado = true;
+        liberarCupo = cupo;
 
-        agent = new VoiceAgentBridge({ vendedorId, callSid }, {
+        agent = new VoiceAgentBridge({ vendedorId, callSid, formato: FORMATO_TELEFONO }, {
           onReady: () => request.log.info({ streamSid }, "Wari listo para recibir audio"),
           onAudio: (audio) => send({ event: "media", streamSid, media: { payload: audio } }),
           onBargeIn: () => send({ event: "clear", streamSid }),
@@ -110,4 +103,6 @@ export const streamRoutes: FastifyPluginAsync = async (app) => {
     socket.on("close", close);
     socket.on("error", close);
   });
+
+  listo();
 };

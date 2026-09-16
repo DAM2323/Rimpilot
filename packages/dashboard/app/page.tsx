@@ -4,6 +4,7 @@ import marca from "../public/logo-simbolo.png";
 import { GraficoFlujoCaja } from "../components/GraficoFlujoCaja";
 import { ListaMovimientos } from "../components/ListaMovimientos";
 import { LiveRefresh } from "../components/LiveRefresh";
+import { MicrofonoWari } from "../components/MicrofonoWari";
 import { ResumenDelDia } from "../components/ResumenDelDia";
 import { dashboardConfigurado, fechaLima, obtenerFlujo, obtenerMovimientos, obtenerResumen, obtenerVendedor } from "../lib/data";
 import type { TipoMovimiento } from "../lib/types";
@@ -28,7 +29,8 @@ export default async function Dashboard({ searchParams }: { searchParams: { tipo
     <section className="workspace">
       <header className="topbar"><div><p className="kicker">{fecha}</p><h1>Buenos días, {nombre}</h1></div><div className="voice-status"><span className="pulse"/><Mic size={17} aria-hidden="true"/> Wari está listo</div></header>
       {!configured && <aside className="configuration-warning" role="status"><strong>Panel sin conectar.</strong> Configura las variables en <code>packages/dashboard/.env.local</code> para mostrar el libro real. No se muestran datos de demostración.</aside>}
-      <section className="intro"><div><h2>Tu caja, clara.</h2><p>Así se movió tu negocio hoy. Cada registro viene directo de tu llamada.</p></div><span className="today">HOY</span></section>
+      <section className="intro"><div><h2>Tu caja, clara.</h2><p>Así se movió tu negocio hoy. Cada registro viene directo de tu voz.</p></div><span className="today">HOY</span></section>
+      <MicrofonoWari/>
       <ResumenDelDia resumen={resumen}/>
       <div className="content-grid">
         <section className="ledger-section"><div className="section-heading"><div><h2>Movimientos</h2><p>{movimientos.length} registros encontrados</p></div><SlidersHorizontal aria-hidden="true" size={19}/></div>

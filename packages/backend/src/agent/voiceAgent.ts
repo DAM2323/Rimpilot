@@ -14,6 +14,21 @@ const voiceUrl = process.env.ASSEMBLYAI_VOICE_URL || "wss://agents.assemblyai.co
 type AgentEvent = z.infer<typeof agentEventSchema>;
 type ToolContext = { vendedorId: string; callSid?: string; getTranscript: () => string };
 
+/**
+ * Cada transporte trae el audio en su propio códec y la sesión se configura con
+ * el que corresponda. Twilio habla G.711 μ-law a 8 kHz; el navegador manda PCM
+ * de 16 bits, que la API espera a 24 kHz salvo que se indique otra tasa.
+ */
+export type FormatoAudio =
+  | { encoding: "audio/pcmu" }
+  | { encoding: "audio/pcm"; sample_rate: number };
+
+export const FORMATO_TELEFONO: FormatoAudio = { encoding: "audio/pcmu" };
+export const FORMATO_NAVEGADOR: FormatoAudio = { encoding: "audio/pcm", sample_rate: 24000 };
+
+/** Lo que el puente necesita saber de la sesión, sea teléfono o navegador. */
+export type ContextoSesion = Omit<ToolContext, "getTranscript"> & { formato: FormatoAudio };
+
 const agentEventSchema = z.object({
   type: z.string(),
   audio: z.string().optional(),
@@ -51,11 +66,16 @@ export class VoiceAgentBridge {
   private cerradoPorNosotros = false;
 
   constructor(
-    private readonly context: Omit<ToolContext, "getTranscript">,
+    private readonly context: ContextoSesion,
     private readonly handlers: {
       onReady: () => void;
       onAudio: (audio: string) => void;
       onBargeIn: () => void;
+      /**
+       * Lo que Wari entendió. El teléfono no lo usa; el navegador sí, porque ahí
+       * el vendedor (y el jurado) necesita ver en pantalla que fue escuchado.
+       */
+      onTranscript?: (texto: string, final: boolean) => void;
       onError: (message: string) => void;
       /** La sesión no se puede sostener: hay que cortar la llamada, no dejar al vendedor en silencio. */
       onFatal: (message: string) => void;
@@ -126,12 +146,12 @@ export class VoiceAgentBridge {
         greeting: WARI_GREETING,
         tools: herramientas,
         input: {
-          format: { encoding: "audio/pcmu" },
+          format: this.context.formato,
           language_codes: ["es"],
           keyterms: ["Yape", "Plin", "fiado", "RIMPILOT"],
           turn_detection: { min_silence: 800, max_silence: 2200, interrupt_response: true },
         },
-        output: { voice: "diego", format: { encoding: "audio/pcmu" } },
+        output: { voice: "diego", format: this.context.formato },
       },
     });
   }
@@ -152,8 +172,10 @@ export class VoiceAgentBridge {
       this.latestTranscript = event.text.startsWith(this.latestTranscript)
         ? event.text
         : `${this.latestTranscript}${this.latestTranscript && !this.latestTranscript.endsWith(" ") ? " " : ""}${event.text}`;
+      this.handlers.onTranscript?.(this.latestTranscript, false);
     } else if (event.type === "transcript.user" && event.text) {
       this.latestTranscript = event.text;
+      this.handlers.onTranscript?.(this.latestTranscript, true);
     } else if (event.type === "tool.call") {
       this.pendingToolCalls.push(event);
     } else if (event.type === "reply.done") {

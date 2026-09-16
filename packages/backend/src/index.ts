@@ -1,8 +1,11 @@
 import "./env.js";
 import Fastify from "fastify";
 import formbody from "@fastify/formbody";
+import rateLimit from "@fastify/rate-limit";
+import websocket from "@fastify/websocket";
 import { twilioRoutes } from "./routes/twilio.js";
 import { streamRoutes } from "./routes/stream.js";
+import { navegadorRoutes } from "./routes/navegador.js";
 
 const app = Fastify({ logger: true });
 
@@ -24,8 +27,18 @@ app.addHook("onSend", (_peticion, respuesta, payload, done) => {
 });
 
 await app.register(formbody);
+/**
+ * Los dos plugins van en la raíz porque rompen la encapsulación de Fastify y
+ * registrarlos dos veces falla. `maxPayload` acota los frames del navegador:
+ * un fragmento de 50 ms en PCM16 a 24 kHz son ~3 KB en base64.
+ */
+await app.register(websocket, { options: { maxPayload: 128 * 1024 } });
+// Cada endpoint declara su propio tope; no hay límite global sobre `/health`.
+await app.register(rateLimit, { global: false, max: 20, timeWindow: "1 minute", cache: 5000 });
+
 await app.register(twilioRoutes, { prefix: "/twilio" });
 await app.register(streamRoutes, { prefix: "/twilio" });
+await app.register(navegadorRoutes, { prefix: "/navegador" });
 app.get("/health", () => ({ ok: true, service: "rimpilot-backend" }));
 
 const port = Number(process.env.PORT ?? 3001);

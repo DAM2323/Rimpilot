@@ -6,8 +6,9 @@ RIMPILOT fue creado desde cero para el AssemblyAI Voice Agent Hackathon 2026. El
 
 ## Qué incluye
 
-- Llamada entrante por Twilio Media Streams.
-- Puente de audio G.711 μ-law (`audio/pcmu`) con AssemblyAI Voice Agent API, sin recodificar audio.
+- **Micrófono del navegador**: el vendedor abre el panel, toca un botón y habla. Es el canal principal y el que cualquiera puede probar sin llamar a ningún número.
+- Llamada entrante por Twilio Media Streams, para el vendedor que no tiene datos en ese momento.
+- Un solo puente de voz para los dos canales: G.711 μ-law (`audio/pcmu`) para el teléfono y PCM16 a 24 kHz (`audio/pcm`) para el navegador, sin recodificar audio en ninguno de los dos.
 - Wari, agente conversacional en español con cuatro herramientas: venta, gasto, cuenta por cobrar y resumen diario.
 - PostgreSQL/Supabase con trazabilidad: cada movimiento conserva el fragmento de transcripción que lo originó.
 - Dashboard Next.js responsive con resumen de caja, filtros, detalle auditable, gráfico de 7 días y actualización automática sin recargar.
@@ -38,14 +39,19 @@ ngrok http 3001
 
 Si faltan variables del dashboard, el panel muestra ceros y una advertencia de configuración; nunca simula datos contables.
 
+Los pasos 4 y 5 solo hacen falta para el canal telefónico. Para hablar por el micrófono del navegador alcanza con el backend en `:3001` y estas tres variables: `RIMPILOT_INTERNAL_KEY` en `.env` y, en `packages/dashboard/.env.local`, la misma `RIMPILOT_INTERNAL_KEY` más `RIMPILOT_BACKEND_URL` y `NEXT_PUBLIC_BACKEND_WS_URL`.
+
 ## Comprobar el audio antes de la demo
 
 Haz esta comprobación antes de probar lógica contable:
 
-1. Llama al número de Twilio y verifica que escuchas el saludo de Wari.
-2. Di una frase corta y confirma en los logs del backend `Wari listo para recibir audio` y eventos de la sesión.
-3. Interrumpe a Wari mientras habla; el audio debe detenerse de inmediato (Twilio recibe `clear`).
-4. Recién entonces prueba movimientos. El bridge usa el mismo códec μ-law 8 kHz que Twilio y AssemblyAI, por lo que los payloads se reenvían como Base64 sin pérdida por conversión.
+1. En el panel, toca **Hablar con Wari** y dale permiso al micrófono. El estado debe pasar a «Wari te está escuchando» y lo que digas aparece transcrito debajo del botón.
+2. Confirma en los logs del backend `Wari listo para recibir audio` y eventos de la sesión.
+3. Interrumpe a Wari mientras habla; el audio debe detenerse de inmediato.
+4. Si vas a usar también el teléfono, llama al número de Twilio y repite los tres pasos.
+5. Recién entonces prueba movimientos. El navegador manda PCM16 a 24 kHz y Twilio μ-law a 8 kHz; el puente configura la sesión con el formato de cada canal y reenvía los payloads en Base64 sin pérdida por conversión.
+
+El micrófono exige un origen seguro: `localhost` sirve tal cual, pero al desplegar el panel tiene que estar en HTTPS o el navegador no entrega el audio.
 
 ## Demo reproducible
 
@@ -58,9 +64,18 @@ Wari registra tres movimientos y, al cerrar, resume ventas `S/ 75`, gastos `S/ 1
 ## Arquitectura
 
 ```text
-Teléfono → Twilio Media Streams → Fastify → AssemblyAI Voice Agent API
-                                        ↘ PostgreSQL / Supabase → Next.js dashboard
+Micrófono del navegador ↘
+                          Fastify → AssemblyAI Voice Agent API
+Teléfono → Twilio       ↗    ↘ PostgreSQL / Supabase → Next.js dashboard
 ```
+
+Los dos canales entran por el mismo puente. El navegador **no** se conecta directo a
+AssemblyAI aunque la API lo permita: si lo hiciera, las llamadas a herramientas
+volverían al cliente y cualquiera podría pedir que se escriba en el libro de otro
+vendedor. Con el backend en el medio, la clave de AssemblyAI no sale del servidor y
+el `vendedor_id` sale siempre de un token firmado con HMAC, nunca de un mensaje del
+navegador. El panel pide ese token desde el servidor, con una clave interna que el
+cliente nunca ve.
 
 `packages/backend` contiene el puente de voz y las reglas de negocio. `packages/dashboard` contiene el libro contable. La base de datos vive en Supabase y usa PostgreSQL directamente desde el backend.
 
@@ -84,12 +99,15 @@ pnpm build
 | `DATABASE_URL` | Conexión PostgreSQL de Supabase para el backend. |
 | `PUBLIC_URL` | URL pública del backend, normalmente la URL HTTPS de ngrok en desarrollo. |
 | `STREAM_TOKEN_SECRET` | Firma el token que autoriza el Media Stream. Mínimo 32 caracteres; el backend falla al arrancar una llamada sin él. |
-| `MAX_LLAMADAS_CONCURRENTES` | Tope de sesiones simultáneas de AssemblyAI. Por defecto 5. |
+| `MAX_LLAMADAS_CONCURRENTES` | Tope de sesiones simultáneas de AssemblyAI. Es un solo contador para el teléfono y el navegador. Por defecto 5. |
+| `RIMPILOT_INTERNAL_KEY` | Clave servidor-a-servidor con la que el panel pide el token del micrófono. Mínimo 32 caracteres; sin ella `/navegador/token` responde 503. Va también en `packages/dashboard/.env.local`. |
+| `RIMPILOT_ORIGENES_PERMITIDOS` | Orígenes que pueden abrir el WebSocket del navegador, separados por coma. Vacío = solo `localhost`. |
 | `ASSEMBLYAI_VOICE_URL` | Opcional. Solo para apuntar a un mock en pruebas; vacío usa la API real. |
 | `SEED_VENDOR_TELEFONO`, `SEED_VENDOR_NOMBRE`, `SEED_VENDOR_NEGOCIO` | Vendedor inicial para `pnpm --filter @rimpilot/backend seed`. El teléfono es obligatorio; nombre y negocio quedan en `NULL` si no los das. |
 | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RIMPILOT_VENDOR_ID` | Van en `packages/dashboard/.env.local`. El servicio consulta solo ese vendedor y la key nunca se expone al navegador. |
 | `RIMPILOT_DASHBOARD_USER`, `RIMPILOT_DASHBOARD_PASSWORD` | Basic Auth del panel, en `packages/dashboard/.env.local`. Obligatorias: sin ellas el panel devuelve 503. |
 | `NEXT_PUBLIC_SITE_URL` | URL pública del panel; alimenta metadata, Open Graph y `sitemap.xml`. |
+| `RIMPILOT_BACKEND_URL`, `NEXT_PUBLIC_BACKEND_WS_URL` | En `packages/dashboard/.env.local`. La primera la usa el servidor de Next para pedir el token; la segunda la usa el navegador para abrir el WebSocket, y su origen se agrega a `connect-src` de la CSP. |
 
 ## Roadmap
 
