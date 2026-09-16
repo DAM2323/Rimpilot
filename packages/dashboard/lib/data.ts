@@ -47,15 +47,17 @@ export async function obtenerMovimientos(filters: { tipo?: TipoMovimiento; desde
   return (data ?? []).map((row) => mapMovimiento(row));
 }
 
+const RESUMEN_VACIO: Resumen = { totalVentas: 0, totalGastos: 0, totalRetiros: 0, saldoDelDia: 0 };
+
 export async function obtenerResumen(): Promise<Resumen> {
   const dashboard = config();
-  if (!dashboard) return { totalVentas: 0, totalGastos: 0, saldoDelDia: 0, totalPorCobrar: 0 };
-  const { data, error } = await dashboard.client.from("resumen_diario").select("total_ventas,total_gastos,saldo_del_dia,total_por_cobrar").eq("vendedor_id", dashboard.vendedorId).eq("fecha", fechaLima()).maybeSingle();
+  if (!dashboard) return RESUMEN_VACIO;
+  const { data, error } = await dashboard.client.from("resumen_diario").select("total_ventas,total_gastos,total_retiros,saldo_del_dia").eq("vendedor_id", dashboard.vendedorId).eq("fecha", fechaLima()).maybeSingle();
   if (error) throw new Error(error.message);
-  if (!data) return { totalVentas: 0, totalGastos: 0, saldoDelDia: 0, totalPorCobrar: 0 };
+  if (!data) return RESUMEN_VACIO;
   return {
     totalVentas: number(data.total_ventas), totalGastos: number(data.total_gastos),
-    saldoDelDia: number(data.saldo_del_dia), totalPorCobrar: number(data.total_por_cobrar),
+    totalRetiros: number(data.total_retiros), saldoDelDia: number(data.saldo_del_dia),
   };
 }
 
@@ -64,14 +66,17 @@ export async function obtenerFlujo(days = 7): Promise<PuntoFlujo[]> {
   const dates = Array.from({ length: days }, (_, index) => {
     const reference = new Date(); reference.setDate(reference.getDate() - (days - 1 - index)); return fechaLima(reference);
   });
-  if (!dashboard) return dates.map((fecha) => ({ fecha, ventas: 0, gastos: 0 }));
+  if (!dashboard) return dates.map((fecha) => ({ fecha, ventas: 0, gastos: 0, retiros: 0 }));
   const firstRange = rangoLima(dates[0]);
   const lastRange = rangoLima(dates[dates.length - 1]);
   const { data, error } = await dashboard.client.from("movimientos").select("tipo,monto,creado_en").eq("vendedor_id", dashboard.vendedorId).gte("creado_en", firstRange.start).lt("creado_en", lastRange.end);
   if (error) throw new Error(error.message);
   return dates.map((fecha) => (data ?? []).filter((row) => fechaLima(new Date(row.creado_en)) === fecha).reduce<PuntoFlujo>((point, row) => ({
-    ...point, ventas: point.ventas + (row.tipo === "venta" ? number(row.monto) : 0), gastos: point.gastos + (row.tipo === "gasto" ? number(row.monto) : 0),
-  }), { fecha, ventas: 0, gastos: 0 }));
+    ...point,
+    ventas: point.ventas + (row.tipo === "venta" ? number(row.monto) : 0),
+    gastos: point.gastos + (row.tipo === "gasto" ? number(row.monto) : 0),
+    retiros: point.retiros + (row.tipo === "retiro" ? number(row.monto) : 0),
+  }), { fecha, ventas: 0, gastos: 0, retiros: 0 }));
 }
 
 export async function obtenerMovimiento(id: string): Promise<Movimiento | null> {

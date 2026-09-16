@@ -1,4 +1,5 @@
-export type TipoMovimiento = "venta" | "gasto" | "cuenta_por_cobrar" | "cuenta_por_pagar";
+/** 'retiro' es la plata que el vendedor sacó de la caja para él, no para el negocio. */
+export type TipoMovimiento = "venta" | "gasto" | "retiro";
 
 export type Movimiento = {
   id: string;
@@ -11,5 +12,6 @@ export type Movimiento = {
   creado_en: string;
 };
 
-export type Resumen = { totalVentas: number; totalGastos: number; saldoDelDia: number; totalPorCobrar: number };
-export type PuntoFlujo = { fecha: string; ventas: number; gastos: number };
+/** `saldoDelDia` es la caja: ventas − gastos − retiros. */
+export type Resumen = { totalVentas: number; totalGastos: number; totalRetiros: number; saldoDelDia: number };
+export type PuntoFlujo = { fecha: string; ventas: number; gastos: number; retiros: number };

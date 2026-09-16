@@ -1,8 +1,8 @@
 import { sql } from "../db/client.js";
-import { fechaLima, recalcularResumen, type ResumenDelDia } from "./resumen.js";
+import { fechaLima, proporcionDeRetiros, recalcularResumen, type ProporcionRetiros, type ResumenDelDia } from "./resumen.js";
 
-export type TipoMovimiento = "venta" | "gasto" | "cuenta_por_cobrar" | "cuenta_por_pagar";
-export type MetodoPago = "efectivo" | "yape" | "plin" | "transferencia" | "fiado";
+export type TipoMovimiento = "venta" | "gasto" | "retiro";
+export type MetodoPago = "efectivo" | "yape" | "plin" | "transferencia";
 
 type MovimientoInput = {
   tipo: TipoMovimiento;
@@ -42,4 +42,21 @@ export async function registrarMovimiento(vendedorId: string, input: MovimientoI
 
 export async function consultarResumen(vendedorId: string, fecha?: string): Promise<ResumenDelDia> {
   return recalcularResumen(vendedorId, fecha ?? fechaLima());
+}
+
+/**
+ * Lo que Wari lee al cerrar: los totales del día más la proporción de la semana.
+ * La proporción va aparte de `consultarResumen` porque esa se llama en cada
+ * movimiento y al cerrar el socket, y no hace falta pagar la consulta ahí.
+ */
+export async function resumenParaCierre(
+  vendedorId: string,
+  fecha?: string,
+): Promise<ResumenDelDia & { semana: ProporcionRetiros | null }> {
+  const dia = fecha ?? fechaLima();
+  const [resumen, semana] = await Promise.all([
+    recalcularResumen(vendedorId, dia),
+    proporcionDeRetiros(vendedorId, dia),
+  ]);
+  return { ...resumen, semana };
 }

@@ -1,0 +1,22 @@
+# RIMPILOT
+
+> Contabilidad por voz para vendedores informales. Una persona llama por teléfono, le cuenta a Wari sus ventas, gastos y fiados en lenguaje natural, y RIMPILOT los organiza en un libro contable auditable que se ve en un panel web.
+
+RIMPILOT no da consejo financiero, no evalúa crédito y no se conecta a bancos. Construye el historial ordenado que puede habilitar eso más adelante.
+
+## Cómo funciona
+
+- La llamada entra por Twilio Media Streams y se puentea en G.711 μ-law con la Voice Agent API de AssemblyAI, sin recodificar el audio.
+- Wari, el agente conversacional en español, dispone de cuatro herramientas: registrar venta, registrar gasto, registrar cuenta por cobrar y consultar el resumen del día.
+- Cada movimiento guarda el fragmento de transcripción que lo originó, de modo que todo registro se puede rastrear hasta las palabras que lo produjeron.
+- Los totales los calcula la base de datos con SQL, nunca el modelo.
+
+## Alcance del panel
+
+El panel es privado y está detrás de autenticación. Muestra el libro de un solo negocio por despliegue: resumen del día, movimientos con filtros, detalle auditable de cada uno y flujo de caja de los últimos siete días.
+
+## Notas
+
+- Proyecto creado para el AssemblyAI Voice Agent Hackathon 2026.
+- Código: https://github.com/DAM2323/Rimpilot
+- Licencia MIT.

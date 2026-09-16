@@ -1,0 +1,57 @@
+# La regla 24 del proyecto pide typecheck, lint y build antes de cada push.
+# Hasta ahora eso dependía de que alguien se acordara; acá lo corre el servidor.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Un push nuevo sobre la misma rama cancela la corrida anterior: no tiene
+# sentido pagar por verificar un commit que ya quedó atrás.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    name: typecheck · lint · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm antes que Node: `setup-node` necesita que el gestor exista para
+      # poder cachear su store.
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+
+      # Node 22 y no 20: pnpm 11.19 —la versión que fija `packageManager`—
+      # exige >= 22.13 y en 20 ni siquiera llega a instalar.
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # --frozen-lockfile falla si el lockfile no coincide con los package.json,
+      # en lugar de resolver versiones distintas a las que se probaron.
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      # El build del panel no necesita variables de entorno: sin ellas Next usa
+      # los valores por defecto y el panel avisa en pantalla que no está
+      # conectado, que es justo lo que tiene que pasar.
+      - name: Build
+        run: pnpm build
