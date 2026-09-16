@@ -49,6 +49,7 @@ const agentEventSchema = z.object({
   session_id: z.string().optional(),
   call_id: z.string().optional(),
   name: z.string().optional(),
+  args: z.unknown().optional(),
   arguments: z.unknown().optional(),
 }).passthrough();
 
@@ -71,7 +72,6 @@ export class VoiceAgentBridge {
   private socket!: WebSocket;
   private ready = false;
   private latestTranscript = "";
-  private pendingToolCalls: AgentEvent[] = [];
   private pendingAudio: string[] = [];
   private intentos = 0;
   private reconectando = false;
@@ -163,13 +163,16 @@ export class VoiceAgentBridge {
         system_prompt: WARI_SYSTEM_PROMPT,
         greeting: WARI_GREETING,
         tools: herramientas,
+        // `type: "audio"` va en los dos: sin él la API ignora el bloque y
+        // vuelve a su voz por defecto, que es inglesa y femenina.
         input: {
+          type: "audio",
           format: this.context.formato,
           language_codes: ["es"],
           keyterms: ["Yape", "Plin", "retiro", "caja", "RIMPILOT"],
           turn_detection: { min_silence: 800, max_silence: 2200, interrupt_response: true },
         },
-        output: { voice: "diego", format: this.context.formato },
+        output: { type: "audio", voice: "diego", format: this.context.formato },
       },
     });
   }
@@ -195,9 +198,13 @@ export class VoiceAgentBridge {
       this.latestTranscript = event.text;
       this.handlers.onTranscript?.(this.latestTranscript, true);
     } else if (event.type === "tool.call") {
-      this.pendingToolCalls.push(event);
+      // Se ejecuta ya, no al cerrar el turno: el agente se queda esperando el
+      // resultado antes de volver a hablar, así que aguardar un `reply.done`
+      // que no va a llegar deja la conversación muda para siempre.
+      void this.responderHerramienta(event);
     } else if (event.type === "reply.done") {
-      void this.respondToPendingTools();
+      this.handlers.onEvento?.(event.type, true, event);
+      return;
     } else if (event.type === "session.error") {
       this.handlers.onError(event.message ?? event.text ?? "AssemblyAI devolvió un error de sesión.");
     } else if (event.type === "error") {
@@ -209,17 +216,25 @@ export class VoiceAgentBridge {
     this.handlers.onEvento?.(event.type, true, event);
   }
 
-  private async respondToPendingTools(): Promise<void> {
-    const calls = this.pendingToolCalls.splice(0);
-    for (const call of calls) {
-      if (!call.call_id || !call.name) continue;
-      try {
-        const result = await this.executeTool(call.name, call.arguments ?? {});
-        this.send({ type: "tool.result", call_id: call.call_id, result: JSON.stringify(result) });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "No se pudo registrar el movimiento.";
-        this.send({ type: "tool.result", call_id: call.call_id, result: JSON.stringify({ ok: false, message }) });
-      }
+  /** Los argumentos llegan en `args`, ya sea como objeto o como JSON en texto. */
+  private static argumentos(call: AgentEvent): unknown {
+    const crudos = call.args ?? call.arguments;
+    if (typeof crudos !== "string") return crudos ?? {};
+    try {
+      return JSON.parse(crudos);
+    } catch {
+      return {};
+    }
+  }
+
+  private async responderHerramienta(call: AgentEvent): Promise<void> {
+    if (!call.call_id || !call.name) return;
+    try {
+      const result = await this.executeTool(call.name, VoiceAgentBridge.argumentos(call));
+      this.send({ type: "tool.result", call_id: call.call_id, result: JSON.stringify(result), is_error: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo registrar el movimiento.";
+      this.send({ type: "tool.result", call_id: call.call_id, result: JSON.stringify({ ok: false, message }), is_error: true });
     }
   }
 
