@@ -16,15 +16,19 @@ type ToolContext = { vendedorId: string; callSid?: string; getTranscript: () => 
 
 /**
  * Cada transporte trae el audio en su propio códec y la sesión se configura con
- * el que corresponda. Twilio habla G.711 μ-law a 8 kHz; el navegador manda PCM
- * de 16 bits, que la API espera a 24 kHz salvo que se indique otra tasa.
+ * el que corresponda: Twilio habla G.711 μ-law a 8 kHz y el navegador PCM de 16
+ * bits a 24 kHz.
+ *
+ * Solo va `encoding`. La tasa está implícita en cada códec —24 kHz para
+ * `audio/pcm`, 8 kHz para `audio/pcmu`— y los ejemplos de la API no llevan
+ * ningún otro campo acá. Mandar un `sample_rate` de más no es inofensivo: la
+ * sesión se abre igual y transcribe, pero el agente deja de producir voz, así
+ * que el síntoma es silencio sin ningún error.
  */
-export type FormatoAudio =
-  | { encoding: "audio/pcmu" }
-  | { encoding: "audio/pcm"; sample_rate: number };
+export type FormatoAudio = { encoding: "audio/pcmu" | "audio/pcm" };
 
 export const FORMATO_TELEFONO: FormatoAudio = { encoding: "audio/pcmu" };
-export const FORMATO_NAVEGADOR: FormatoAudio = { encoding: "audio/pcm", sample_rate: 24000 };
+export const FORMATO_NAVEGADOR: FormatoAudio = { encoding: "audio/pcm" };
 
 /** Lo que el puente necesita saber de la sesión, sea teléfono o navegador. */
 export type ContextoSesion = Omit<ToolContext, "getTranscript"> & { formato: FormatoAudio };
