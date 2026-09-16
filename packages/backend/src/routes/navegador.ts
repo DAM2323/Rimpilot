@@ -156,10 +156,16 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
           onTranscript: (texto, final) => send({ tipo: "transcripcion", texto, final }),
           // Una línea por tipo de evento y no una por fragmento: `reply.audio`
           // llega cien veces por segundo y ahogaría el resto del log.
-          onEvento: (tipo, manejado) => {
+          onEvento: (tipo, manejado, evento) => {
             const clave = `${tipo}:${manejado}`;
             if (vistos.has(clave)) return;
             vistos.add(clave);
+            // `session.updated` trae la configuración que la API aceptó de
+            // verdad: es la única forma de saber si la voz que pedimos quedó.
+            if (tipo === "session.updated" || tipo === "session.error") {
+              request.log.info({ tipo, evento }, "Configuración aplicada por AssemblyAI");
+              return;
+            }
             request.log.info({ tipo, manejado }, manejado ? "Evento de AssemblyAI" : "Evento de AssemblyAI que no sabemos manejar");
           },
           onError: (mensajeError) => {

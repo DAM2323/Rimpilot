@@ -42,6 +42,8 @@ const agentEventSchema = z.object({
    */
   audio: z.string().optional(),
   data: z.string().optional(),
+  /** `session.updated` devuelve la configuración tal como quedó aplicada. */
+  session: z.unknown().optional(),
   text: z.string().optional(),
   message: z.string().optional(),
   session_id: z.string().optional(),
@@ -91,7 +93,7 @@ export class VoiceAgentBridge {
        * nombres de los eventos son de la API, no nuestros: si alguno cambia o
        * nos equivocamos, sin esto el síntoma es silencio y nada en el log.
        */
-      onEvento?: (tipo: string, manejado: boolean) => void;
+      onEvento?: (tipo: string, manejado: boolean, evento: Record<string, unknown>) => void;
       onError: (message: string) => void;
       /** La sesión no se puede sostener: hay que cortar la llamada, no dejar al vendedor en silencio. */
       onFatal: (message: string) => void;
@@ -201,10 +203,10 @@ export class VoiceAgentBridge {
     } else if (event.type === "error") {
       this.handlers.onError(event.message ?? event.text ?? "AssemblyAI devolvió un error.");
     } else {
-      this.handlers.onEvento?.(event.type, false);
+      this.handlers.onEvento?.(event.type, false, event);
       return;
     }
-    this.handlers.onEvento?.(event.type, true);
+    this.handlers.onEvento?.(event.type, true, event);
   }
 
   private async respondToPendingTools(): Promise<void> {
