@@ -35,7 +35,13 @@ export type ContextoSesion = Omit<ToolContext, "getTranscript"> & { formato: For
 
 const agentEventSchema = z.object({
   type: z.string(),
+  /**
+   * El audio del vendedor viaja en `audio`, pero el de Wari llega en `data`.
+   * Son campos distintos en cada sentido y confundirlos no da ningún error:
+   * los fragmentos entran y se descartan en silencio.
+   */
   audio: z.string().optional(),
+  data: z.string().optional(),
   text: z.string().optional(),
   message: z.string().optional(),
   session_id: z.string().optional(),
@@ -173,8 +179,8 @@ export class VoiceAgentBridge {
       this.ready = true;
       for (const audio of this.pendingAudio.splice(0)) this.send({ type: "input.audio", audio });
       this.handlers.onReady();
-    } else if (event.type === "reply.audio" && event.audio) {
-      this.handlers.onAudio(event.audio);
+    } else if (event.type === "reply.audio" && event.data) {
+      this.handlers.onAudio(event.data);
     } else if (event.type === "input.speech.started") {
       this.latestTranscript = "";
       this.handlers.onBargeIn();
