@@ -96,6 +96,9 @@ The background is keyed out with a soft alpha ramp rather than a hard threshold,
 the glow and the antialiased edges survive. That lets the lockup sit on `--bg`
 without a visible plate.
 
+The hackathon cover at `docs/cover/` derives from the same file and the same
+tokens, and is generated from `plantilla.html` rather than placed by hand.
+
 These three files, the Open Graph image and the middleware matcher move together:
 the matcher must keep the logo and icon outside the auth gate, or the browser cannot
 fetch the favicon before signing in.

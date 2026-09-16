@@ -123,7 +123,14 @@ Not claimed:
 | What | Where |
 | --- | --- |
 | Repository | https://github.com/DAM2323/Rimpilot |
+| Cover image | [docs/cover/rimpilot-cover.png](cover/rimpilot-cover.png) — 3840×2160, 16:9 |
 | Demo video | *(pending upload)* |
 | Live demo | *(pending deploy)* |
 | Slides | [docs/slides.md](slides.md) |
 | Demo script | [docs/demo-script.md](demo-script.md) |
+
+The cover is generated, not hand-placed: `node docs/cover/render.mjs` rebuilds it
+from [cover/plantilla.html](cover/plantilla.html), inlining Inter and the real
+logo file. Change a number or a line of copy in the template and re-run. It needs
+Playwright available; the rendered PNG is committed, so you only re-run it if the
+copy changes.
