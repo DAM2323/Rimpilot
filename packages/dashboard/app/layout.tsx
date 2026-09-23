@@ -12,8 +12,9 @@ export const metadata: Metadata = {
   title: { default: "RIMPILOT | Tu caja, clara", template: "%s | RIMPILOT" },
   description: descripcion,
   applicationName: "RIMPILOT",
-  // El panel muestra datos financieros de una persona: no se indexa nunca.
-  robots: { index: false, follow: false, nocache: true },
+  // La landing sí se indexa; el libro lo desactiva en su propia metadata,
+  // porque ahí sí hay datos financieros de una persona.
+  robots: { index: true, follow: true },
   openGraph: {
     type: "website", siteName: "RIMPILOT", locale: "es_PE",
     title: "RIMPILOT | Tu caja, clara", description: descripcion, url: siteUrl,

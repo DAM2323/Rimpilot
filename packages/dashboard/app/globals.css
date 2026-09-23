@@ -34,6 +34,74 @@ button, select, input { min-height: 44px; }
 .voice-status { background: var(--surface); border: 1px solid var(--line); padding: 10px 14px; border-radius: 999px; display: flex; align-items: center; gap: 8px; color: var(--cyan); font-size: .875rem; font-weight: 650; }.pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px var(--cyan-soft); }
 .intro { margin-top: 58px; align-items: end; }.intro h2 { font-size: 2rem; letter-spacing: -.045em; margin: 0 0 8px; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; width: fit-content; }.intro p { margin: 0; color: var(--muted); font-size: 1rem; }.today { border: 1px solid var(--line-strong); border-radius: 999px; padding: 6px 10px; margin: 0; color: var(--cyan); }
 .configuration-warning { margin-top: 22px; padding: 13px 15px; color: var(--rose); background: var(--rose-soft); border: 1px solid var(--rose); border-radius: 10px; font-size: .875rem; }.configuration-warning code { color: var(--ink); font-weight: 700; }
+/* ---------------------------------------------------------------- LANDING ---
+   La puerta publica. Mismos tokens que el panel: cian lo que entro, rosa lo
+   que salio por el negocio, violeta lo que se llevo la persona. El degradado
+   de marca aparece tres veces y ninguna lleva texto encima. */
+.landing { max-width: 1180px; margin: 0 auto; padding: 38px clamp(20px, 5vw, 56px) 0; position: relative; overflow-x: clip; }
+.landing-brillo { position: absolute; top: -420px; right: -320px; width: 1100px; height: 1100px; pointer-events: none; background: radial-gradient(circle, rgba(130,76,232,.20) 0%, rgba(1,178,248,.07) 46%, transparent 70%); }
+.landing-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; position: relative; }
+.landing-marca { height: auto; width: 168px; object-fit: contain; }
+.landing-evento { border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; color: var(--muted); font-size: .8125rem; font-weight: 650; }
+
+.landing-hero { position: relative; margin-top: clamp(48px, 8vw, 96px); display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(34px, 6vw, 84px); align-items: center; }
+.landing-hero h1 { font-size: clamp(2.5rem, 6.4vw, 4.25rem); line-height: .98; letter-spacing: -.055em; margin: 0; font-weight: 800; }
+.landing-hero h1 span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.landing-bajada { margin: 22px 0 0; color: var(--muted); font-size: clamp(1rem, 2vw, 1.25rem); line-height: 1.45; max-width: 34ch; }
+.landing-remate { margin-top: 30px; display: flex; align-items: center; gap: 18px; }
+.landing-regla { width: 84px; height: 5px; border-radius: 3px; background: var(--grad); flex: none; }
+.landing-remate p { margin: 0; font-size: 1rem; font-weight: 650; letter-spacing: -.015em; }
+.landing-remate em { color: var(--muted); font-style: normal; }
+.landing-cta { margin-top: 34px; display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 26px; border-radius: 999px; background: var(--cyan); color: var(--on-accent); font-weight: 750; font-size: 1rem; text-decoration: none; transition: filter 180ms ease-out; }
+.landing-cta:hover { filter: brightness(1.12); }
+
+/* El hero es el libro mismo: la caja separada porque es el resultado de la resta. */
+.landing-libro { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 8px 30px 14px; }
+.landing-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.landing-fila span { color: var(--muted); font-size: .9375rem; font-weight: 600; }
+.landing-fila strong { font-size: clamp(1.5rem, 3.4vw, 2.125rem); letter-spacing: -.05em; font-weight: 800; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+.landing-fila.entra strong, .landing-fila.caja strong { color: var(--cyan); }
+.landing-fila.sale strong { color: var(--rose); }
+.landing-fila.retiro strong { color: var(--violet); }
+.landing-fila.caja { border-bottom: 0; padding-top: 24px; }
+.landing-fila.caja span { color: var(--ink); font-weight: 700; }
+
+.landing-problema { position: relative; margin-top: clamp(80px, 12vw, 150px); max-width: 62ch; }
+.landing-problema h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); letter-spacing: -.04em; margin: 0 0 24px; line-height: 1.1; }
+.landing-problema p { color: var(--muted); font-size: 1.0625rem; line-height: 1.65; margin: 0 0 18px; }
+.landing-problema strong { color: var(--ink); font-weight: 650; }
+
+.landing-pasos { position: relative; margin-top: clamp(64px, 9vw, 104px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.landing-pasos article { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 26px; }
+.landing-paso-icono { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; color: var(--cyan); background: var(--cyan-soft); }
+.landing-pasos h3 { font-size: 1.0625rem; letter-spacing: -.02em; margin: 18px 0 10px; }
+.landing-pasos p { margin: 0; color: var(--muted); font-size: .9375rem; line-height: 1.6; }
+
+.landing-stack { position: relative; margin-top: clamp(80px, 12vw, 150px); }
+.landing-stack-intro h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); letter-spacing: -.04em; margin: 0 0 12px; }
+.landing-stack-intro p { margin: 0 0 30px; color: var(--muted); font-size: 1.0625rem; max-width: 52ch; }
+.landing-stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; }
+.landing-stack-grid article { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+.landing-stack-icono { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: var(--violet); background: var(--violet-soft); }
+.landing-stack-grid h3 { font-size: .9375rem; letter-spacing: -.01em; margin: 16px 0 8px; }
+.landing-stack-grid p { margin: 0; color: var(--muted); font-size: .875rem; line-height: 1.6; }
+
+.landing-cierre { position: relative; margin-top: clamp(80px, 12vw, 150px); padding: clamp(40px, 7vw, 72px) 30px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; }
+.landing-cierre h2 { font-size: clamp(2rem, 5vw, 3rem); letter-spacing: -.05em; margin: 0 0 12px; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.landing-cierre p { margin: 0; color: var(--muted); font-size: 1.0625rem; }
+
+.landing-pie { position: relative; margin-top: 56px; padding: 26px 0 48px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+.landing-pie p { margin: 0; color: var(--muted); font-size: .8125rem; line-height: 1.55; max-width: 62ch; }
+.landing-pie a { color: var(--cyan); font-size: .8125rem; font-weight: 650; text-decoration: none; }
+.landing-pie a:hover { text-decoration: underline; }
+
+@media (max-width: 860px) {
+  .landing-hero { grid-template-columns: 1fr; }
+  .landing-pasos { grid-template-columns: 1fr; }
+  .landing-marca { width: 130px; }
+  .landing-evento { font-size: .6875rem; padding: 7px 12px; }
+}
+
 /* Micrófono: el degradado de marca solo como borde y relleno; el texto va sobre
    --surface (--ink 17.81:1, --muted 8.40:1) y el botón lleva --on-accent sobre
    cian (7.43:1) o sobre rosa (6.65:1), nunca blanco sobre un relleno de marca. */

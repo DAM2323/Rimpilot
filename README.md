@@ -68,6 +68,18 @@ inglés en [docs/hackathon-submission.md](docs/hackathon-submission.md) y
 
 Wari registra tres movimientos y, al cerrar, lee ventas `S/ 75`, gastos `S/ 15`, retiros `S/ 20` y caja `S/ 40`. Vendió 75 y le quedan 40: esa resta es el producto. El dashboard muestra cada entrada y la transcripción que la originó.
 
+## Las dos puertas
+
+| Ruta | Qué es | Acceso |
+| --- | --- | --- |
+| `/` | Landing: el problema, la resta de 75 a 40 y con qué está hecho | **pública** |
+| `/libro` | El libro contable, con la plata y las transcripciones reales | Basic Auth |
+
+La landing existe porque antes el sitio entero pedía contraseña: quien abría la
+URL veía una ventana de credenciales y nada más. La CSP y las cabeceras de
+seguridad siguen aplicándose a las dos; lo único que cambia es quién necesita
+clave.
+
 ## Desplegarlo
 
 El panel va a Vercel y el backend a Render: sostiene un WebSocket abierto toda

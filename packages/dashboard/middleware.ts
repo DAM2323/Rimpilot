@@ -87,9 +87,32 @@ function aplicarCabeceras(respuesta: NextResponse, csp: string): NextResponse {
   return respuesta;
 }
 
+/**
+ * Lo que pide clave. El resto del sitio —la landing— es público, pero pasa por
+ * acá igual: la CSP y las cabeceras de seguridad valen para toda respuesta, no
+ * solo para las protegidas.
+ */
+function exigeClave(ruta: string): boolean {
+  // `/api/voz` entra porque emite el token que abre una sesión de voz, y cada
+  // sesión se paga.
+  return ruta === "/libro" || ruta.startsWith("/libro/") || ruta.startsWith("/api/voz");
+}
+
+function conNonce(request: NextRequest, nonce: string, csp: string): NextResponse {
+  // Next lee la CSP de la petición para poner el nonce en sus <script>.
+  const cabeceras = new Headers(request.headers);
+  cabeceras.set("x-nonce", nonce);
+  cabeceras.set("Content-Security-Policy", csp);
+  return NextResponse.next({ request: { headers: cabeceras } });
+}
+
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const nonce = crypto.randomUUID().replaceAll("-", "");
   const csp = politicaDeSeguridad(nonce, process.env.NODE_ENV !== "production");
+
+  if (!exigeClave(request.nextUrl.pathname)) {
+    return aplicarCabeceras(conNonce(request, nonce, csp), csp);
+  }
 
   const usuarioEsperado = process.env.RIMPILOT_DASHBOARD_USER;
   const claveEsperada = process.env.RIMPILOT_DASHBOARD_PASSWORD;
@@ -109,11 +132,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
         sha256(usuarioEsperado), sha256(claveEsperada),
       ]);
       if (iguales(usuario, esperadoUsuario) && iguales(clave, esperadaClave)) {
-        // Next lee la CSP de la petición para poner el nonce en sus <script>.
-        const cabeceras = new Headers(request.headers);
-        cabeceras.set("x-nonce", nonce);
-        cabeceras.set("Content-Security-Policy", csp);
-        return aplicarCabeceras(NextResponse.next({ request: { headers: cabeceras } }), csp);
+        return aplicarCabeceras(conNonce(request, nonce, csp), csp);
       }
     }
   }
@@ -128,7 +147,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  // El favicon, la imagen social y el logo quedan fuera de la puerta: no llevan
-  // datos del libro y los necesita el navegador antes de autenticarse.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|logo.png|logo-simbolo.png|opengraph-image|robots.txt|sitemap.xml|llms.txt).*)"],
+  /**
+   * Cubre todo salvo estáticos, porque la CSP y las cabeceras van en cada
+   * respuesta. Quién necesita clave lo decide `exigeClave`, no este matcher:
+   * la landing pasa por acá y sale sin pedir nada.
+   */
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|logo.png|logo-simbolo.png|opengraph-image|robots.txt|sitemap.xml|llms.txt|captura-microfono.js).*)"],
 };

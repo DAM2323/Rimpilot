@@ -13,7 +13,7 @@ export function ListaMovimientos({ movimientos }: { movimientos: Movimiento[] })
   return <div className="movement-list" role="list" aria-label="Movimientos">
     {movimientos.map((movimiento) => {
       const Icon = icons[movimiento.tipo];
-      return <Link className="movement" href={`/movimiento/${movimiento.id}`} key={movimiento.id} role="listitem">
+      return <Link className="movement" href={`/libro/movimiento/${movimiento.id}`} key={movimiento.id} role="listitem">
         <span className={`movement-icon ${movimiento.tipo}`}><Icon aria-hidden="true" size={18}/></span>
         <span className="movement-copy"><strong>{movimiento.descripcion}</strong><small>{labels[movimiento.tipo]}{movimiento.contraparte ? ` · ${movimiento.contraparte}` : ""} · {hora(movimiento.creado_en)}</small></span>
         <span className={`movement-amount ${movimiento.tipo}`}>{movimiento.tipo === "venta" ? "+" : "−"}{money.format(movimiento.monto)}</span>
