@@ -91,13 +91,16 @@ const HERRAMIENTAS = [
   },
 ];
 
-export default function Landing() {
+export default function Landing({ searchParams }: { searchParams: { error?: string } }) {
   return <main className="landing">
     <div className="landing-brillo" aria-hidden="true" />
 
     <header className="landing-top">
       <Image className="landing-marca" src={marca} alt="RIMPILOT" width={200} height={157} priority />
-      <span className="landing-evento">AssemblyAI Voice Agent Hackathon 2026</span>
+      <div className="landing-top-derecha">
+        <span className="landing-evento">AssemblyAI Voice Agent Hackathon 2026</span>
+        <Link className="landing-entrar" href="/entrar">Entrar</Link>
+      </div>
     </header>
 
     <section className="landing-hero">
@@ -110,9 +113,24 @@ export default function Landing() {
           <span className="landing-regla" />
           <p>Vendió 75. Tiene 40. <em>Ahora sabe por qué.</em></p>
         </div>
-        <Link className="landing-cta" href="/libro">
-          Ver el libro <ArrowRight size={18} aria-hidden="true" />
-        </Link>
+        {searchParams.error && <p className="landing-error" role="alert">{searchParams.error}</p>}
+
+        <div className="landing-acciones">
+          <Link className="landing-cta" href="/crear-cuenta">
+            Crear mi libro <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+          {/*
+            Probar no pide correo ni contraseña: el botón abre un libro vacío y
+            propio para esa visita (regla 12, nada compartido). Es un formulario
+            y no un enlace porque crea una cuenta, y eso no se hace con un GET.
+          */}
+          <form method="post" action="/api/cuenta/invitado">
+            <button className="landing-cta-suave" type="submit">Probar sin registrarme</button>
+          </form>
+        </div>
+        <p className="landing-letra-chica">
+          El libro de prueba es solo tuyo y se pierde al cerrar la sesión.
+        </p>
       </div>
 
       <div className="landing-libro" role="img" aria-label="Ventas 75 soles, gastos 15, retiros 20, caja 40">
@@ -173,9 +191,14 @@ export default function Landing() {
     <section className="landing-cierre">
       <h2>Tu caja, clara.</h2>
       <p>El libro muestra la plata que tenés, no la que vendiste.</p>
-      <Link className="landing-cta" href="/libro">
-        Entrar al libro <ArrowRight size={18} aria-hidden="true" />
-      </Link>
+      <div className="landing-acciones centradas">
+        <Link className="landing-cta" href="/crear-cuenta">
+          Crear mi libro <ArrowRight size={18} aria-hidden="true" />
+        </Link>
+        <form method="post" action="/api/cuenta/invitado">
+          <button className="landing-cta-suave" type="submit">Probar sin registrarme</button>
+        </form>
+      </div>
     </section>
 
     <footer className="landing-pie">

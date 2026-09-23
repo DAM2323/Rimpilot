@@ -3,23 +3,30 @@ import { NextResponse } from "next/server";
 /**
  * Emite el token con el que el navegador abre el WebSocket de voz.
  *
- * Esta ruta corre en el servidor y ya está detrás del Basic Auth del panel. El
- * `vendedor_id` sale de la variable de entorno, no del cuerpo de la petición:
- * el navegador no elige de quién es el libro donde se escribe. La clave interna
- * y el secreto que firma el token nunca salen del servidor.
+ * El `vendedor_id` sale de la sesión —la cabecera `x-vendedor` que escribe el
+ * middleware después de verificar la firma de la cookie—, nunca del cuerpo de
+ * la petición: si el navegador pudiera elegirlo, escribiría en el libro de
+ * cualquiera. La clave interna y el secreto que firma el token no salen del
+ * servidor.
  */
 export const dynamic = "force-dynamic";
 
-export async function POST(): Promise<NextResponse> {
+export async function POST(request: Request): Promise<NextResponse> {
   const backendUrl = process.env.RIMPILOT_BACKEND_URL;
   const claveInterna = process.env.RIMPILOT_INTERNAL_KEY;
-  const vendedorId = process.env.RIMPILOT_VENDOR_ID;
 
-  if (!backendUrl || !claveInterna || !vendedorId) {
+  if (!backendUrl || !claveInterna) {
     return NextResponse.json(
-      { error: "Falta RIMPILOT_BACKEND_URL, RIMPILOT_INTERNAL_KEY o RIMPILOT_VENDOR_ID en packages/dashboard/.env.local." },
+      { error: "Falta RIMPILOT_BACKEND_URL o RIMPILOT_INTERNAL_KEY en packages/dashboard/.env.local." },
       { status: 503 },
     );
+  }
+
+  // El middleware ya cierra esta ruta sin sesión; esto es el segundo cerrojo,
+  // por si alguna vez cambia el matcher.
+  const vendedorId = request.headers.get("x-vendedor");
+  if (!vendedorId) {
+    return NextResponse.json({ error: "Entrá a tu libro antes de hablar con Wari." }, { status: 401 });
   }
 
   let respuesta: Response;

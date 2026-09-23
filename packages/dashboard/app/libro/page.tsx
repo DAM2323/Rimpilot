@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Filter, Mic, SlidersHorizontal } from "lucide-react";
 import marca from "../../public/logo-simbolo.png";
 import { GraficoFlujoCaja } from "../../components/GraficoFlujoCaja";
@@ -8,6 +9,7 @@ import { MicrofonoWari } from "../../components/MicrofonoWari";
 import { ResumenDelDia } from "../../components/ResumenDelDia";
 import { dashboardConfigurado, fechaLima, obtenerFlujo, obtenerMovimientos, obtenerResumen, obtenerVendedor } from "../../lib/data";
 import { proporcionDeLaSemana } from "../../lib/proporcion";
+import { vendedorActual } from "../../lib/vendedorActual";
 import type { TipoMovimiento } from "../../lib/types";
 
 const types: Array<{ value: TipoMovimiento; label: string }> = [
@@ -20,18 +22,21 @@ export const metadata = { robots: { index: false, follow: false, nocache: true }
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard({ searchParams }: { searchParams: { tipo?: TipoMovimiento; desde?: string; hasta?: string } }) {
+  const vendedorId = vendedorActual();
   const [resumen, movimientos, flujo, vendedor] = await Promise.all([
-    obtenerResumen(), obtenerMovimientos(searchParams), obtenerFlujo(7),
-    obtenerVendedor(),
+    obtenerResumen(vendedorId), obtenerMovimientos(vendedorId, searchParams), obtenerFlujo(vendedorId, 7),
+    obtenerVendedor(vendedorId),
   ]);
   const configured = dashboardConfigurado();
   const fecha = new Intl.DateTimeFormat("es-PE", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${fechaLima()}T12:00:00-05:00`));
   const nombre = vendedor?.nombre ?? vendedor?.nombre_negocio ?? "tu negocio";
+  const invitado = vendedor?.es_invitado ?? false;
   return <main className="app-shell antialiased">
     <LiveRefresh />
     <aside className="sidebar"><Image className="brand-mark" src={marca} alt="RIMPILOT" width={44} height={35} priority/><div className="sidebar-line active"/><div className="sidebar-line"/><div className="sidebar-line"/></aside>
     <section className="workspace">
-      <header className="topbar"><div><p className="kicker">{fecha}</p><h1>Buenos días, {nombre}</h1></div><div className="voice-status"><span className="pulse"/><Mic size={17} aria-hidden="true"/> Wari está listo</div></header>
+      <header className="topbar"><div><p className="kicker">{fecha}</p><h1>Buenos días, {nombre}</h1></div><div className="topbar-derecha"><div className="voice-status"><span className="pulse"/><Mic size={17} aria-hidden="true"/> Wari está listo</div><form method="post" action="/api/cuenta/salir"><button type="submit" className="salir">{invitado ? "Terminar prueba" : "Salir"}</button></form></div></header>
+      {invitado && <aside className="aviso-invitado" role="status"><strong>Estás probando RIMPILOT.</strong> Este libro es solo tuyo y nadie más lo ve, pero se pierde cuando cierres la sesión. <Link href="/crear-cuenta">Creá tu cuenta</Link> para conservarlo.</aside>}
       {!configured && <aside className="configuration-warning" role="status"><strong>Panel sin conectar.</strong> Configura las variables en <code>packages/dashboard/.env.local</code> para mostrar el libro real. No se muestran datos de demostración.</aside>}
       <section className="intro"><div><h2>Tu caja, clara.</h2><p>Así se movió tu negocio hoy. Cada registro viene directo de tu voz.</p></div><span className="today">HOY</span></section>
       <MicrofonoWari/>

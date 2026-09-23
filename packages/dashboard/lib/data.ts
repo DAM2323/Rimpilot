@@ -1,18 +1,24 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Movimiento, PuntoFlujo, Resumen, TipoMovimiento } from "./types";
 
-type DashboardConfig = { client: SupabaseClient; vendedorId: string };
-export type VendedorDashboard = { nombre: string | null; nombre_negocio: string | null };
+/**
+ * Todas las consultas reciben el `vendedorId` de la sesión. Antes salía de una
+ * variable de entorno, porque había un solo vendedor por despliegue; con
+ * cuentas, un valor fijo acá significaría que cualquiera ve el libro de otro.
+ *
+ * Por eso no hay un valor por defecto ni una constante de módulo: si la llamada
+ * no trae dueño, no hay consulta.
+ */
+export type VendedorDashboard = { nombre: string | null; nombre_negocio: string | null; es_invitado: boolean };
 
-function config(): DashboardConfig | null {
+function cliente(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const vendedorId = process.env.RIMPILOT_VENDOR_ID;
-  if (!url || !serviceRole || !vendedorId) return null;
-  return { client: createClient(url, serviceRole, { auth: { persistSession: false } }), vendedorId };
+  if (!url || !serviceRole) return null;
+  return createClient(url, serviceRole, { auth: { persistSession: false } });
 }
 
-export function dashboardConfigurado(): boolean { return config() !== null; }
+export function dashboardConfigurado(): boolean { return cliente() !== null; }
 
 export function fechaLima(date = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
@@ -35,10 +41,10 @@ function mapMovimiento(row: Record<string, unknown>): Movimiento {
   return { ...row, monto: number(row.monto) } as Movimiento;
 }
 
-export async function obtenerMovimientos(filters: { tipo?: TipoMovimiento; desde?: string; hasta?: string } = {}): Promise<Movimiento[]> {
-  const dashboard = config();
-  if (!dashboard) return [];
-  let query = dashboard.client.from("movimientos").select("id,tipo,descripcion,monto,contraparte,metodo_pago,transcripcion,creado_en").eq("vendedor_id", dashboard.vendedorId).order("creado_en", { ascending: false }).limit(100);
+export async function obtenerMovimientos(vendedorId: string, filters: { tipo?: TipoMovimiento; desde?: string; hasta?: string } = {}): Promise<Movimiento[]> {
+  const db = cliente();
+  if (!db) return [];
+  let query = db.from("movimientos").select("id,tipo,descripcion,monto,contraparte,metodo_pago,transcripcion,creado_en").eq("vendedor_id", vendedorId).order("creado_en", { ascending: false }).limit(100);
   if (filters.tipo) query = query.eq("tipo", filters.tipo);
   if (filters.desde) query = query.gte("creado_en", rangoLima(filters.desde).start);
   if (filters.hasta) query = query.lt("creado_en", rangoLima(filters.hasta).end);
@@ -49,10 +55,10 @@ export async function obtenerMovimientos(filters: { tipo?: TipoMovimiento; desde
 
 const RESUMEN_VACIO: Resumen = { totalVentas: 0, totalGastos: 0, totalRetiros: 0, saldoDelDia: 0 };
 
-export async function obtenerResumen(): Promise<Resumen> {
-  const dashboard = config();
-  if (!dashboard) return RESUMEN_VACIO;
-  const { data, error } = await dashboard.client.from("resumen_diario").select("total_ventas,total_gastos,total_retiros,saldo_del_dia").eq("vendedor_id", dashboard.vendedorId).eq("fecha", fechaLima()).maybeSingle();
+export async function obtenerResumen(vendedorId: string): Promise<Resumen> {
+  const db = cliente();
+  if (!db) return RESUMEN_VACIO;
+  const { data, error } = await db.from("resumen_diario").select("total_ventas,total_gastos,total_retiros,saldo_del_dia").eq("vendedor_id", vendedorId).eq("fecha", fechaLima()).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return RESUMEN_VACIO;
   return {
@@ -61,15 +67,15 @@ export async function obtenerResumen(): Promise<Resumen> {
   };
 }
 
-export async function obtenerFlujo(days = 7): Promise<PuntoFlujo[]> {
-  const dashboard = config();
+export async function obtenerFlujo(vendedorId: string, days = 7): Promise<PuntoFlujo[]> {
+  const db = cliente();
   const dates = Array.from({ length: days }, (_, index) => {
     const reference = new Date(); reference.setDate(reference.getDate() - (days - 1 - index)); return fechaLima(reference);
   });
-  if (!dashboard) return dates.map((fecha) => ({ fecha, ventas: 0, gastos: 0, retiros: 0 }));
+  if (!db) return dates.map((fecha) => ({ fecha, ventas: 0, gastos: 0, retiros: 0 }));
   const firstRange = rangoLima(dates[0]);
   const lastRange = rangoLima(dates[dates.length - 1]);
-  const { data, error } = await dashboard.client.from("movimientos").select("tipo,monto,creado_en").eq("vendedor_id", dashboard.vendedorId).gte("creado_en", firstRange.start).lt("creado_en", lastRange.end);
+  const { data, error } = await db.from("movimientos").select("tipo,monto,creado_en").eq("vendedor_id", vendedorId).gte("creado_en", firstRange.start).lt("creado_en", lastRange.end);
   if (error) throw new Error(error.message);
   return dates.map((fecha) => (data ?? []).filter((row) => fechaLima(new Date(row.creado_en)) === fecha).reduce<PuntoFlujo>((point, row) => ({
     ...point,
@@ -79,18 +85,23 @@ export async function obtenerFlujo(days = 7): Promise<PuntoFlujo[]> {
   }), { fecha, ventas: 0, gastos: 0, retiros: 0 }));
 }
 
-export async function obtenerMovimiento(id: string): Promise<Movimiento | null> {
-  const dashboard = config();
-  if (!dashboard) return null;
-  const { data, error } = await dashboard.client.from("movimientos").select("id,tipo,descripcion,monto,contraparte,metodo_pago,transcripcion,creado_en").eq("vendedor_id", dashboard.vendedorId).eq("id", id).maybeSingle();
+/**
+ * Filtra por id **y** por dueño. Con solo el id, cambiar el UUID de la URL
+ * mostraría el movimiento de otra persona: es el IDOR clásico, y acá el dato
+ * expuesto sería cuánto vendió alguien y lo que dijo al registrarlo.
+ */
+export async function obtenerMovimiento(vendedorId: string, id: string): Promise<Movimiento | null> {
+  const db = cliente();
+  if (!db) return null;
+  const { data, error } = await db.from("movimientos").select("id,tipo,descripcion,monto,contraparte,metodo_pago,transcripcion,creado_en").eq("vendedor_id", vendedorId).eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   return data ? mapMovimiento(data) : null;
 }
 
-export async function obtenerVendedor(): Promise<VendedorDashboard | null> {
-  const dashboard = config();
-  if (!dashboard) return null;
-  const { data, error } = await dashboard.client.from("vendedores").select("nombre,nombre_negocio").eq("id", dashboard.vendedorId).maybeSingle();
+export async function obtenerVendedor(vendedorId: string): Promise<VendedorDashboard | null> {
+  const db = cliente();
+  if (!db) return null;
+  const { data, error } = await db.from("vendedores").select("nombre,nombre_negocio,es_invitado").eq("id", vendedorId).maybeSingle();
   if (error) throw new Error(error.message);
-  return data;
+  return data as VendedorDashboard | null;
 }

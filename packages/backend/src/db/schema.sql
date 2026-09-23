@@ -2,11 +2,27 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE IF NOT EXISTS vendedores (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telefono TEXT UNIQUE NOT NULL,
+  -- Hay tres formas de llegar a tener un libro y cada una deja un rastro
+  -- distinto: por teléfono (Twilio), registrándose en la web, o entrando como
+  -- invitado. Ninguna de las tres columnas puede ser obligatoria por sí sola.
+  telefono TEXT UNIQUE,
+  email TEXT UNIQUE,
+  clave_hash TEXT,
+  es_invitado BOOLEAN NOT NULL DEFAULT false,
   nombre TEXT,
   nombre_negocio TEXT,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Un vendedor sin ninguna de las tres sería un libro al que nadie puede volver.
+ALTER TABLE vendedores DROP CONSTRAINT IF EXISTS vendedores_tiene_identidad;
+ALTER TABLE vendedores ADD CONSTRAINT vendedores_tiene_identidad
+  CHECK (telefono IS NOT NULL OR email IS NOT NULL OR es_invitado);
+
+-- Quien se registra con email necesita clave; el invitado y el del teléfono no.
+ALTER TABLE vendedores DROP CONSTRAINT IF EXISTS vendedores_email_con_clave;
+ALTER TABLE vendedores ADD CONSTRAINT vendedores_email_con_clave
+  CHECK (email IS NULL OR clave_hash IS NOT NULL);
 
 CREATE TABLE IF NOT EXISTS movimientos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
