@@ -140,6 +140,12 @@ export class VoiceAgentBridge {
        */
       onTranscript?: (texto: string, final: boolean) => void;
       /**
+       * Lo que Wari dijo. Sin esto, cuando algo sale raro el log muestra que
+       * hubo respuesta y cuántos fragmentos de voz tuvo, pero no qué dijo, que
+       * es justo lo que hace falta para entender por qué no anotó nada.
+       */
+      onTranscripcionDeWari?: (texto: string) => void;
+      /**
        * Cada evento que llega de AssemblyAI, con si lo entendimos o no. Los
        * nombres de los eventos son de la API, no nuestros: si alguno cambia o
        * nos equivocamos, sin esto el síntoma es silencio y nada en el log.
@@ -254,6 +260,15 @@ export class VoiceAgentBridge {
     } else if (event.type === "transcript.user" && event.text) {
       this.latestTranscript = event.text;
       this.handlers.onTranscript?.(this.latestTranscript, true);
+    } else if (event.type === "transcript.agent" && event.text) {
+      this.handlers.onTranscripcionDeWari?.(event.text);
+    } else if (event.type === "reply.started" || event.type === "input.speech.stopped"
+      || event.type === "transcript.agent.delta") {
+      // Eventos normales del protocolo que no exigen nada de nuestra parte. Se
+      // marcan como conocidos igual: un log que los llama "no sabemos manejar"
+      // manda a buscar el problema donde no está.
+      this.handlers.onEvento?.(event.type, true, event);
+      return;
     } else if (event.type === "tool.call") {
       // Se ejecuta ya, no al cerrar el turno: el agente se queda esperando el
       // resultado antes de volver a hablar, así que aguardar un `reply.done`

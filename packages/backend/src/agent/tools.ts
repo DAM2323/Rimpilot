@@ -1,5 +1,15 @@
 import { z } from "zod";
 
+/**
+ * Las herramientas que Wari puede pedir, en el formato del ejemplo oficial de
+ * AssemblyAI: `type: "function"`, nombre, descripción y `parameters` con
+ * `required`.
+ *
+ * Ninguna pide `transcripcion`. Antes sí, y era trabajo de más para el modelo
+ * en cada llamada: el puente ya guarda la última transcripción final del
+ * vendedor y la escribe él. La frase que originó el movimiento se sigue
+ * guardando igual; lo que cambia es quién la pone.
+ */
 export const herramientas = [
   {
     type: "function",
@@ -12,7 +22,6 @@ export const herramientas = [
         monto: { type: "number" },
         metodo_pago: { type: "string", enum: ["efectivo", "yape", "plin", "transferencia"] },
         contraparte: { type: "string", description: "A quién vendió, si lo mencionó" },
-        transcripcion: { type: "string", description: "Fragmento exacto dicho por la persona para esta venta" },
       },
       required: ["descripcion", "monto"],
     },
@@ -27,7 +36,6 @@ export const herramientas = [
         descripcion: { type: "string", description: "En qué gastó, en pocas palabras" },
         monto: { type: "number" },
         metodo_pago: { type: "string", enum: ["efectivo", "yape", "plin", "transferencia"] },
-        transcripcion: { type: "string", description: "Fragmento exacto dicho por la persona para este gasto" },
       },
       required: ["descripcion", "monto"],
     },
@@ -42,7 +50,6 @@ export const herramientas = [
         monto: { type: "number" },
         motivo: { type: "string", description: "Para qué la sacó, si lo dijo: almuerzo, la casa, el colegio" },
         metodo_pago: { type: "string", enum: ["efectivo", "yape", "plin", "transferencia"] },
-        transcripcion: { type: "string", description: "Fragmento exacto dicho por la persona para este retiro" },
       },
       required: ["monto"],
     },
