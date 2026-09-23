@@ -95,7 +95,8 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
     let agent: VoiceAgentBridge | null = null;
     let vendedorId = "";
     let liberarCupo: (() => void) | null = null;
-    const vistos = new Set<string>();
+    /** Cuántos fragmentos de voz lleva la respuesta que Wari está diciendo. */
+    let fragmentosDeVoz = 0;
 
     const send = (payload: Record<string, unknown>): void => {
       if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(payload));
@@ -154,12 +155,26 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
           onAudio: (audio) => send({ tipo: "audio", audio }),
           onBargeIn: () => send({ tipo: "limpiar" }),
           onTranscript: (texto, final) => send({ tipo: "transcripcion", texto, final }),
-          // Una línea por tipo de evento y no una por fragmento: `reply.audio`
-          // llega cien veces por segundo y ahogaría el resto del log.
+          /**
+           * Cada evento, en orden, salvo `reply.audio`, que llega cien veces por
+           * segundo y ahogaría todo lo demás: de ese se registra solo el primero
+           * de cada respuesta.
+           *
+           * Antes se guardaba una sola línea por tipo de evento. Parecía
+           * prolijo y fue un estorbo: cuando Wari se quedaba mudo a mitad de una
+           * conversación, los eventos del segundo turno ya no se imprimían
+           * porque su tipo "ya se había visto", y el log terminaba justo donde
+           * empezaba el problema.
+           */
           onEvento: (tipo, manejado, evento) => {
-            const clave = `${tipo}:${manejado}`;
-            if (vistos.has(clave)) return;
-            vistos.add(clave);
+            if (tipo === "reply.audio") {
+              if (fragmentosDeVoz > 0) { fragmentosDeVoz += 1; return; }
+              fragmentosDeVoz = 1;
+            } else if (tipo === "reply.done") {
+              request.log.info({ tipo, fragmentosDeVoz }, "Wari terminó de hablar");
+              fragmentosDeVoz = 0;
+              return;
+            }
             // `session.updated` trae la configuración que la API aceptó de
             // verdad: es la única forma de saber si la voz que pedimos quedó.
             if (tipo === "session.updated" || tipo === "session.error") {

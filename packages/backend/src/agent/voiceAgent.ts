@@ -57,10 +57,14 @@ type Voz = (typeof VOCES_DOCUMENTADAS)[number];
 /**
  * `lola` es la única voz con acento nativo en español del catálogo. Es de
  * España y RIMPILOT es para Perú, así que el acento no es el del vendedor; aun
- * así es la opción correcta, porque las alternativas hablan español con acento
- * inglés. Hoy no hay ninguna voz masculina en español.
+ * así es el valor por defecto, porque las alternativas hablan español con
+ * acento inglés. Hoy no hay ninguna voz masculina en español.
+ *
+ * Se puede cambiar con `ASSEMBLYAI_VOZ` en el `.env`, para poder escuchar
+ * varias sin tocar el código: cuál suena mejor es algo que se decide oyéndolas,
+ * no leyendo una tabla.
  */
-const VOZ: Voz = "lola";
+const VOZ_POR_DEFECTO: Voz = "lola";
 
 /** Falla al arrancar, no en medio de una llamada que además se paga. */
 function vozValida(voz: string): Voz {
@@ -70,6 +74,11 @@ function vozValida(voz: string): Voz {
     );
   }
   return voz as Voz;
+}
+
+function vozElegida(): Voz {
+  const pedida = process.env.ASSEMBLYAI_VOZ?.trim().toLowerCase();
+  return pedida ? vozValida(pedida) : VOZ_POR_DEFECTO;
 }
 
 /** Lo que el puente necesita saber de la sesión, sea teléfono o navegador. */
@@ -220,7 +229,7 @@ export class VoiceAgentBridge {
           keyterms: ["Yape", "Plin", "retiro", "caja", "RIMPILOT"],
           turn_detection: { min_silence: 800, max_silence: 2200, interrupt_response: true },
         },
-        output: { type: "audio", voice: vozValida(VOZ), format: this.context.formato },
+        output: { type: "audio", voice: vozElegida(), format: this.context.formato },
       },
     });
   }
