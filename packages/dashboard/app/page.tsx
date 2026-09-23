@@ -1,45 +1,189 @@
 import Image from "next/image";
-import { Filter, Mic, SlidersHorizontal } from "lucide-react";
-import marca from "../public/logo-simbolo.png";
-import { GraficoFlujoCaja } from "../components/GraficoFlujoCaja";
-import { ListaMovimientos } from "../components/ListaMovimientos";
-import { LiveRefresh } from "../components/LiveRefresh";
-import { MicrofonoWari } from "../components/MicrofonoWari";
-import { ResumenDelDia } from "../components/ResumenDelDia";
-import { dashboardConfigurado, fechaLima, obtenerFlujo, obtenerMovimientos, obtenerResumen, obtenerVendedor } from "../lib/data";
-import { proporcionDeLaSemana } from "../lib/proporcion";
-import type { TipoMovimiento } from "../lib/types";
+import Link from "next/link";
+import {
+  ArrowRight, Braces, Database, FileCheck2, Mic, PhoneCall, ScanEye,
+  ShieldCheck, Type, Waves,
+} from "lucide-react";
+import marca from "../public/logo.png";
 
-const types: Array<{ value: TipoMovimiento; label: string }> = [
-  { value: "venta", label: "Ventas" }, { value: "gasto", label: "Gastos" }, { value: "retiro", label: "Retiros" },
+/**
+ * La puerta pública. Antes el sitio entero pedía contraseña, así que quien
+ * abría la URL —un jurado, un vendedor, cualquiera— veía una ventana de
+ * credenciales y nada más. El libro con la plata real sigue detrás de la clave,
+ * en /libro; esto explica qué es RIMPILOT antes de pedir nada.
+ *
+ * En español porque es el producto: está hecho para vendedores en Perú y verlo
+ * en su idioma es parte de lo que se muestra. Los textos para la convocatoria
+ * viven aparte, en inglés, en docs/.
+ */
+export const metadata = {
+  title: "RIMPILOT | Contale tu día y el libro se escribe solo",
+  description:
+    "Contabilidad por voz para vendedores informales en Perú. Contale a Wari lo que vendiste, lo que gastaste y lo que sacaste de la caja para vos, y tu libro se escribe solo.",
+  robots: { index: true, follow: true },
+};
+
+const LIBRO = [
+  { etiqueta: "Ventas", valor: "S/ 75", tono: "entra" },
+  { etiqueta: "Gastos", valor: "−S/ 15", tono: "sale" },
+  { etiqueta: "Sacaste para ti", valor: "−S/ 20", tono: "retiro" },
+  { etiqueta: "Caja", valor: "S/ 40", tono: "caja" },
 ];
 
-export const dynamic = "force-dynamic";
+const PASOS = [
+  {
+    icono: Mic,
+    titulo: "Hablás como hablás",
+    texto: "«Vendí tres pollos a veinticinco soles, me pagaron por Yape, gasté quince en pasaje y me saqué veinte para el almuerzo.» Sin menús, sin orden, sin palabras clave.",
+  },
+  {
+    icono: Waves,
+    titulo: "Wari separa y anota",
+    texto: "Reconoce tres movimientos en esa sola frase y los registra mientras seguís hablando. Antes de cerrar pregunta lo que nadie se pregunta: ¿sacaste algo de la caja para vos?",
+  },
+  {
+    icono: ScanEye,
+    titulo: "Cada número se puede rastrear",
+    texto: "Tocá cualquier registro del libro y vas a ver el fragmento exacto que dijiste y que lo originó. Nada salió de una suposición.",
+  },
+];
 
-export default async function Dashboard({ searchParams }: { searchParams: { tipo?: TipoMovimiento; desde?: string; hasta?: string } }) {
-  const [resumen, movimientos, flujo, vendedor] = await Promise.all([
-    obtenerResumen(), obtenerMovimientos(searchParams), obtenerFlujo(7),
-    obtenerVendedor(),
-  ]);
-  const configured = dashboardConfigurado();
-  const fecha = new Intl.DateTimeFormat("es-PE", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${fechaLima()}T12:00:00-05:00`));
-  const nombre = vendedor?.nombre ?? vendedor?.nombre_negocio ?? "tu negocio";
-  return <main className="app-shell antialiased">
-    <LiveRefresh />
-    <aside className="sidebar"><Image className="brand-mark" src={marca} alt="RIMPILOT" width={44} height={35} priority/><div className="sidebar-line active"/><div className="sidebar-line"/><div className="sidebar-line"/></aside>
-    <section className="workspace">
-      <header className="topbar"><div><p className="kicker">{fecha}</p><h1>Buenos días, {nombre}</h1></div><div className="voice-status"><span className="pulse"/><Mic size={17} aria-hidden="true"/> Wari está listo</div></header>
-      {!configured && <aside className="configuration-warning" role="status"><strong>Panel sin conectar.</strong> Configura las variables en <code>packages/dashboard/.env.local</code> para mostrar el libro real. No se muestran datos de demostración.</aside>}
-      <section className="intro"><div><h2>Tu caja, clara.</h2><p>Así se movió tu negocio hoy. Cada registro viene directo de tu voz.</p></div><span className="today">HOY</span></section>
-      <MicrofonoWari/>
-      <ResumenDelDia resumen={resumen} proporcion={proporcionDeLaSemana(flujo)}/>
-      <div className="content-grid">
-        <section className="ledger-section"><div className="section-heading"><div><h2>Movimientos</h2><p>{movimientos.length} registros encontrados</p></div><SlidersHorizontal aria-hidden="true" size={19}/></div>
-          <form className="filters"><Filter aria-hidden="true" size={16}/><label>Tipo<select name="tipo" defaultValue={searchParams.tipo ?? ""}><option value="">Todos</option>{types.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label><label>Desde<input name="desde" type="date" defaultValue={searchParams.desde}/></label><label>Hasta<input name="hasta" type="date" defaultValue={searchParams.hasta}/></label><button type="submit">Aplicar</button></form>
-          <ListaMovimientos movimientos={movimientos}/>
-        </section>
-        <section className="flow-section"><div className="section-heading"><div><h2>Flujo de caja</h2><p>Últimos 7 días</p></div></div><GraficoFlujoCaja puntos={flujo}/><p className="chart-note">Ventas, gastos y retiros se actualizan solos cuando Wari registra un movimiento.</p></section>
+const HERRAMIENTAS = [
+  {
+    icono: Waves,
+    nombre: "AssemblyAI Voice Agent API",
+    texto: "La voz de punta a punta: escucha en español, detecta cuándo terminaste de hablar, se deja interrumpir y llama a las herramientas que escriben en el libro.",
+  },
+  {
+    icono: Mic,
+    nombre: "Micrófono del navegador",
+    texto: "PCM16 a 24 kHz vía WebSocket. El audio pasa por nuestro servidor, nunca directo: si no, cualquiera podría escribir en el libro de otro vendedor.",
+  },
+  {
+    icono: PhoneCall,
+    nombre: "Twilio Media Streams",
+    texto: "El mismo agente por teléfono, en G.711 μ-law a 8 kHz, para el vendedor que en ese momento no tiene datos. Un solo puente para los dos canales.",
+  },
+  {
+    icono: Braces,
+    nombre: "Fastify · TypeScript",
+    texto: "El puente de voz y las reglas del negocio. Los totales los calcula el código, nunca el modelo: Wari lee los números, no los inventa.",
+  },
+  {
+    icono: Database,
+    nombre: "PostgreSQL · Supabase",
+    texto: "Cada movimiento guarda la transcripción que lo originó. Row Level Security en todas las tablas y ninguna política abierta al navegador.",
+  },
+  {
+    icono: ShieldCheck,
+    nombre: "Semgrep · axe-core · Playwright",
+    texto: "437 reglas de seguridad y accesibilidad medida, no estimada: cero violaciones WCAG AA en escritorio y en móvil, en todos los estados.",
+  },
+  {
+    icono: FileCheck2,
+    nombre: "Zod",
+    texto: "Nada llega a la base sin validar: el webhook, cada frame del audio y cada argumento que manda el modelo pasan por un esquema antes de tocar el libro.",
+  },
+  {
+    icono: Type,
+    nombre: "Next.js 14 · Inter",
+    texto: "El libro, con numerales tabulares para que los montos se alineen dígito a dígito. CSP estricta con nonce por request, sin inline ni eval.",
+  },
+];
+
+export default function Landing() {
+  return <main className="landing">
+    <div className="landing-brillo" aria-hidden="true" />
+
+    <header className="landing-top">
+      <Image className="landing-marca" src={marca} alt="RIMPILOT" width={200} height={157} priority />
+      <span className="landing-evento">AssemblyAI Voice Agent Hackathon 2026</span>
+    </header>
+
+    <section className="landing-hero">
+      <div>
+        <h1>Contale tu día.<br /><span>El libro se escribe solo.</span></h1>
+        <p className="landing-bajada">
+          Contabilidad por voz para vendedores informales en Perú.
+        </p>
+        <div className="landing-remate">
+          <span className="landing-regla" />
+          <p>Vendió 75. Tiene 40. <em>Ahora sabe por qué.</em></p>
+        </div>
+        <Link className="landing-cta" href="/libro">
+          Ver el libro <ArrowRight size={18} aria-hidden="true" />
+        </Link>
+      </div>
+
+      <div className="landing-libro" role="img" aria-label="Ventas 75 soles, gastos 15, retiros 20, caja 40">
+        {LIBRO.map(({ etiqueta, valor, tono }) => (
+          <div className={`landing-fila ${tono}`} key={etiqueta}>
+            <span>{etiqueta}</span><strong>{valor}</strong>
+          </div>
+        ))}
       </div>
     </section>
+
+    <section className="landing-problema">
+      <h2>Sabe cuánto vendió. No sabe dónde quedó.</h2>
+      <p>
+        Preguntale a un vendedor cuánto vendió hoy y te lo dice al instante.
+        Preguntale por qué en la caja hay menos y se encoge de hombros.
+      </p>
+      <p>
+        Casi nunca es un robo ni una cuenta mal hecha. Es el almuerzo. El pasaje
+        de los hijos. Veinte soles que le dio a un primo a las tres de la tarde.
+        Plata que sacó para él y que nadie anotó, <strong>porque nadie abre una
+        planilla para registrar que se compró el almuerzo</strong>.
+      </p>
+      <p>
+        Pero sí lo dice en voz alta. Por eso la voz no es la interfaz de este
+        producto: <strong>es el producto</strong>.
+      </p>
+    </section>
+
+    <section className="landing-pasos">
+      {PASOS.map(({ icono: Icono, titulo, texto }) => (
+        <article key={titulo}>
+          <span className="landing-paso-icono"><Icono size={20} aria-hidden="true" /></span>
+          <h3>{titulo}</h3>
+          <p>{texto}</p>
+        </article>
+      ))}
+    </section>
+
+    <section className="landing-stack">
+      <div className="landing-stack-intro">
+        <h2>Con qué está hecho</h2>
+        <p>
+          Cada pieza está acá por una razón concreta, no por figurar en una lista.
+        </p>
+      </div>
+      <div className="landing-stack-grid">
+        {HERRAMIENTAS.map(({ icono: Icono, nombre, texto }) => (
+          <article key={nombre}>
+            <span className="landing-stack-icono"><Icono size={18} aria-hidden="true" /></span>
+            <h3>{nombre}</h3>
+            <p>{texto}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section className="landing-cierre">
+      <h2>Tu caja, clara.</h2>
+      <p>El libro muestra la plata que tenés, no la que vendiste.</p>
+      <Link className="landing-cta" href="/libro">
+        Entrar al libro <ArrowRight size={18} aria-hidden="true" />
+      </Link>
+    </section>
+
+    <footer className="landing-pie">
+      <p>
+        RIMPILOT no evalúa crédito, no se conecta a bancos y no da consejos
+        financieros. Ordena lo que la persona dice sobre su propia plata.
+      </p>
+      <a href="https://github.com/DAM2323/Rimpilot">Código en GitHub</a>
+    </footer>
   </main>;
 }
