@@ -95,6 +95,7 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
     let agent: VoiceAgentBridge | null = null;
     let vendedorId = "";
     let liberarCupo: (() => void) | null = null;
+    const vistos = new Set<string>();
 
     const send = (payload: Record<string, unknown>): void => {
       if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(payload));
@@ -153,7 +154,28 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
           onAudio: (audio) => send({ tipo: "audio", audio }),
           onBargeIn: () => send({ tipo: "limpiar" }),
           onTranscript: (texto, final) => send({ tipo: "transcripcion", texto, final }),
-          onError: (mensajeError) => request.log.error({ mensaje: mensajeError }, "Error de Wari en el navegador"),
+          // Una línea por tipo de evento y no una por fragmento: `reply.audio`
+          // llega cien veces por segundo y ahogaría el resto del log.
+          onEvento: (tipo, manejado, evento) => {
+            const clave = `${tipo}:${manejado}`;
+            if (vistos.has(clave)) return;
+            vistos.add(clave);
+            // `session.updated` trae la configuración que la API aceptó de
+            // verdad: es la única forma de saber si la voz que pedimos quedó.
+            if (tipo === "session.updated" || tipo === "session.error") {
+              request.log.info({ tipo, evento }, "Configuración aplicada por AssemblyAI");
+              return;
+            }
+            request.log.info({ tipo, manejado }, manejado ? "Evento de AssemblyAI" : "Evento de AssemblyAI que no sabemos manejar");
+          },
+          onHerramienta: (nombre, argumentos, resultado) =>
+            request.log.info({ herramienta: nombre, argumentos, resultado }, "Wari pidió una herramienta"),
+          onError: (mensajeError) => {
+            request.log.error({ mensaje: mensajeError }, "Error de Wari en el navegador");
+            // Antes esto moría en el log del servidor: el vendedor veía el
+            // micrófono encendido y nada más, sin saber que algo había fallado.
+            send({ tipo: "aviso", mensaje: mensajeError });
+          },
           onFatal: (mensajeError) => {
             // Regla 20: mensaje real, nunca un micrófono abierto contra la nada.
             request.log.error({ mensaje: mensajeError }, "Sesión de voz caída: se cierra el canal del navegador");

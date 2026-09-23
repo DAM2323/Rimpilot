@@ -68,6 +68,13 @@ inglés en [docs/hackathon-submission.md](docs/hackathon-submission.md) y
 
 Wari registra tres movimientos y, al cerrar, lee ventas `S/ 75`, gastos `S/ 15`, retiros `S/ 20` y caja `S/ 40`. Vendió 75 y le quedan 40: esa resta es el producto. El dashboard muestra cada entrada y la transcripción que la originó.
 
+## Desplegarlo
+
+El panel va a Vercel y el backend a Render: sostiene un WebSocket abierto toda
+la conversación, y una función serverless se corta antes. Los pasos, las
+variables y el aviso del plan gratuito están en
+[docs/despliegue.md](docs/despliegue.md).
+
 ## Arquitectura
 
 ```text
@@ -85,6 +92,13 @@ navegador. El panel pide ese token desde el servidor, con una clave interna que 
 cliente nunca ve.
 
 `packages/backend` contiene el puente de voz y las reglas de negocio. `packages/dashboard` contiene el libro contable. La base de datos vive en Supabase y usa PostgreSQL directamente desde el backend.
+
+## Arranque rapido en Windows
+
+Doble clic en [`rimpilot.bat`](rimpilot.bat): trae los ultimos cambios, actualiza
+dependencias, revisa que la configuracion este completa y levanta backend y
+panel. Si lo dejas suelto en una carpeta vacia, clona el repositorio primero,
+asi el mismo archivo sirve para empezar de cero y para ponerte al dia.
 
 ## Comandos
 

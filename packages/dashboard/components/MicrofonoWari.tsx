@@ -89,6 +89,10 @@ export function MicrofonoWari() {
   useEffect(() => terminar, [terminar]);
 
   const reproducir = useCallback((activa: Sesion, pcm: Int16Array): void => {
+    // El contexto puede haber quedado suspendido: se crea después de pedir el
+    // micrófono y el token, y para entonces la ventana del gesto del usuario
+    // ya pasó. Sin esto no suena nada y no hay ningún error que lo diga.
+    if (activa.contexto.state === "suspended") void activa.contexto.resume();
     const buffer = activa.contexto.createBuffer(1, pcm.length, HZ);
     const canal = buffer.getChannelData(0);
     for (let i = 0; i < pcm.length; i += 1) canal[i] = aFloat32(pcm[i]);
@@ -208,7 +212,7 @@ export function MicrofonoWari() {
         activa.siguienteInicio = 0;
       } else if (mensaje.tipo === "transcripcion" && typeof mensaje.texto === "string") {
         setTranscripcion(mensaje.texto);
-      } else if (mensaje.tipo === "error") {
+      } else if (mensaje.tipo === "aviso" || mensaje.tipo === "error") {
         setError(mensaje.mensaje ?? "La sesión de voz falló.");
       }
     };

@@ -16,27 +16,40 @@ type ToolContext = { vendedorId: string; callSid?: string; getTranscript: () => 
 
 /**
  * Cada transporte trae el audio en su propio códec y la sesión se configura con
- * el que corresponda. Twilio habla G.711 μ-law a 8 kHz; el navegador manda PCM
- * de 16 bits, que la API espera a 24 kHz salvo que se indique otra tasa.
+ * el que corresponda: Twilio habla G.711 μ-law a 8 kHz y el navegador PCM de 16
+ * bits a 24 kHz.
+ *
+ * Solo va `encoding`. La tasa está implícita en cada códec —24 kHz para
+ * `audio/pcm`, 8 kHz para `audio/pcmu`— y los ejemplos de la API no llevan
+ * ningún otro campo acá. Mandar un `sample_rate` de más no es inofensivo: la
+ * sesión se abre igual y transcribe, pero el agente deja de producir voz, así
+ * que el síntoma es silencio sin ningún error.
  */
-export type FormatoAudio =
-  | { encoding: "audio/pcmu" }
-  | { encoding: "audio/pcm"; sample_rate: number };
+export type FormatoAudio = { encoding: "audio/pcmu" | "audio/pcm" };
 
 export const FORMATO_TELEFONO: FormatoAudio = { encoding: "audio/pcmu" };
-export const FORMATO_NAVEGADOR: FormatoAudio = { encoding: "audio/pcm", sample_rate: 24000 };
+export const FORMATO_NAVEGADOR: FormatoAudio = { encoding: "audio/pcm" };
 
 /** Lo que el puente necesita saber de la sesión, sea teléfono o navegador. */
 export type ContextoSesion = Omit<ToolContext, "getTranscript"> & { formato: FormatoAudio };
 
 const agentEventSchema = z.object({
   type: z.string(),
+  /**
+   * El audio del vendedor viaja en `audio`, pero el de Wari llega en `data`.
+   * Son campos distintos en cada sentido y confundirlos no da ningún error:
+   * los fragmentos entran y se descartan en silencio.
+   */
   audio: z.string().optional(),
+  data: z.string().optional(),
+  /** `session.updated` devuelve la configuración tal como quedó aplicada. */
+  session: z.unknown().optional(),
   text: z.string().optional(),
   message: z.string().optional(),
   session_id: z.string().optional(),
   call_id: z.string().optional(),
   name: z.string().optional(),
+  args: z.unknown().optional(),
   arguments: z.unknown().optional(),
 }).passthrough();
 
@@ -59,7 +72,6 @@ export class VoiceAgentBridge {
   private socket!: WebSocket;
   private ready = false;
   private latestTranscript = "";
-  private pendingToolCalls: AgentEvent[] = [];
   private pendingAudio: string[] = [];
   private intentos = 0;
   private reconectando = false;
@@ -76,6 +88,18 @@ export class VoiceAgentBridge {
        * el vendedor (y el jurado) necesita ver en pantalla que fue escuchado.
        */
       onTranscript?: (texto: string, final: boolean) => void;
+      /**
+       * Cada evento que llega de AssemblyAI, con si lo entendimos o no. Los
+       * nombres de los eventos son de la API, no nuestros: si alguno cambia o
+       * nos equivocamos, sin esto el síntoma es silencio y nada en el log.
+       */
+      onEvento?: (tipo: string, manejado: boolean, evento: Record<string, unknown>) => void;
+      /**
+       * Cada herramienta que Wari pide, con lo que devolvió. Wari puede decir
+       * que anotó algo sin haberlo pedido nunca, así que la palabra del modelo
+       * no alcanza: esto deja constancia de lo que pasó de verdad.
+       */
+      onHerramienta?: (nombre: string, argumentos: unknown, resultado: Record<string, unknown>) => void;
       onError: (message: string) => void;
       /** La sesión no se puede sostener: hay que cortar la llamada, no dejar al vendedor en silencio. */
       onFatal: (message: string) => void;
@@ -145,13 +169,16 @@ export class VoiceAgentBridge {
         system_prompt: WARI_SYSTEM_PROMPT,
         greeting: WARI_GREETING,
         tools: herramientas,
+        // `type: "audio"` va en los dos: sin él la API ignora el bloque y
+        // vuelve a su voz por defecto, que es inglesa y femenina.
         input: {
+          type: "audio",
           format: this.context.formato,
           language_codes: ["es"],
           keyterms: ["Yape", "Plin", "retiro", "caja", "RIMPILOT"],
           turn_detection: { min_silence: 800, max_silence: 2200, interrupt_response: true },
         },
-        output: { voice: "diego", format: this.context.formato },
+        output: { type: "audio", voice: "diego", format: this.context.formato },
       },
     });
   }
@@ -163,8 +190,8 @@ export class VoiceAgentBridge {
       this.ready = true;
       for (const audio of this.pendingAudio.splice(0)) this.send({ type: "input.audio", audio });
       this.handlers.onReady();
-    } else if (event.type === "reply.audio" && event.audio) {
-      this.handlers.onAudio(event.audio);
+    } else if (event.type === "reply.audio" && event.data) {
+      this.handlers.onAudio(event.data);
     } else if (event.type === "input.speech.started") {
       this.latestTranscript = "";
       this.handlers.onBargeIn();
@@ -177,27 +204,46 @@ export class VoiceAgentBridge {
       this.latestTranscript = event.text;
       this.handlers.onTranscript?.(this.latestTranscript, true);
     } else if (event.type === "tool.call") {
-      this.pendingToolCalls.push(event);
+      // Se ejecuta ya, no al cerrar el turno: el agente se queda esperando el
+      // resultado antes de volver a hablar, así que aguardar un `reply.done`
+      // que no va a llegar deja la conversación muda para siempre.
+      void this.responderHerramienta(event);
     } else if (event.type === "reply.done") {
-      void this.respondToPendingTools();
+      this.handlers.onEvento?.(event.type, true, event);
+      return;
     } else if (event.type === "session.error") {
       this.handlers.onError(event.message ?? event.text ?? "AssemblyAI devolvió un error de sesión.");
     } else if (event.type === "error") {
       this.handlers.onError(event.message ?? event.text ?? "AssemblyAI devolvió un error.");
+    } else {
+      this.handlers.onEvento?.(event.type, false, event);
+      return;
+    }
+    this.handlers.onEvento?.(event.type, true, event);
+  }
+
+  /** Los argumentos llegan en `args`, ya sea como objeto o como JSON en texto. */
+  private static argumentos(call: AgentEvent): unknown {
+    const crudos = call.args ?? call.arguments;
+    if (typeof crudos !== "string") return crudos ?? {};
+    try {
+      return JSON.parse(crudos);
+    } catch {
+      return {};
     }
   }
 
-  private async respondToPendingTools(): Promise<void> {
-    const calls = this.pendingToolCalls.splice(0);
-    for (const call of calls) {
-      if (!call.call_id || !call.name) continue;
-      try {
-        const result = await this.executeTool(call.name, call.arguments ?? {});
-        this.send({ type: "tool.result", call_id: call.call_id, result: JSON.stringify(result) });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "No se pudo registrar el movimiento.";
-        this.send({ type: "tool.result", call_id: call.call_id, result: JSON.stringify({ ok: false, message }) });
-      }
+  private async responderHerramienta(call: AgentEvent): Promise<void> {
+    if (!call.call_id || !call.name) return;
+    const argumentos = VoiceAgentBridge.argumentos(call);
+    try {
+      const result = await this.executeTool(call.name, argumentos);
+      this.handlers.onHerramienta?.(call.name, argumentos, result);
+      this.send({ type: "tool.result", call_id: call.call_id, result: JSON.stringify(result), is_error: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo registrar el movimiento.";
+      this.handlers.onHerramienta?.(call.name, argumentos, { ok: false, message });
+      this.send({ type: "tool.result", call_id: call.call_id, result: JSON.stringify({ ok: false, message }), is_error: true });
     }
   }
 
@@ -206,7 +252,7 @@ export class VoiceAgentBridge {
     if (name === "registrar_venta") {
       const args = ventaSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
-        tipo: "venta", descripcion: args.descripcion, monto: args.monto, contraparte: args.contraparte,
+        tipo: "venta", descripcion: args.descripcion ?? "Venta", monto: args.monto, contraparte: args.contraparte,
         metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
@@ -214,7 +260,7 @@ export class VoiceAgentBridge {
     if (name === "registrar_gasto") {
       const args = gastoSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
-        tipo: "gasto", descripcion: args.descripcion, monto: args.monto, metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
+        tipo: "gasto", descripcion: args.descripcion ?? "Gasto", monto: args.monto, metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
     }
