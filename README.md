@@ -28,9 +28,10 @@ Copy-Item .env.example .env  # PowerShell en Windows
 ```
 
 1. Crea un proyecto en Supabase y ejecuta todo [packages/backend/src/db/schema.sql](packages/backend/src/db/schema.sql) en el SQL Editor. Ese archivo solo crea estructura: no deja ningún vendedor cargado.
-   Si tu proyecto es de antes del retiro personal, corré además [002_retiro_personal.sql](packages/backend/src/db/migrations/002_retiro_personal.sql) una sola vez. Archiva en `movimientos_fiado_archivado` los movimientos de fiado antes de borrarlos: no se convierten a retiro, porque una cuenta por cobrar no es plata que salió de la caja.
-2. Completa `DATABASE_URL` y las credenciales de AssemblyAI/Twilio en `.env`. Rellena también `SEED_VENDOR_TELEFONO` (y opcionalmente `SEED_VENDOR_NOMBRE` y `SEED_VENDOR_NEGOCIO`) y crea el vendedor con `pnpm --filter @rimpilot/backend seed`. El script imprime la línea `RIMPILOT_VENDOR_ID=…` que necesitás en el paso siguiente, y falla si le falta el teléfono en lugar de inventar uno.
-3. Copia `packages/dashboard/.env.local.example` como `packages/dashboard/.env.local`. Añade ahí `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y el UUID de `RIMPILOT_VENDOR_ID`. El dashboard es de un negocio por despliegue: todas las consultas se limitan a ese UUID y no hay datos de muestra ocultos. Añade también `RIMPILOT_DASHBOARD_USER` y `RIMPILOT_DASHBOARD_PASSWORD` (mínimo 16 caracteres): el panel pide Basic Auth y **sin esas dos variables responde 503**, porque muestra el libro contable y las transcripciones de una persona real.
+   Si tu proyecto es de antes de las cuentas, corré [003_cuentas.sql](packages/backend/src/db/migrations/003_cuentas.sql) una sola vez: agrega correo, contraseña e invitados sin tocar los vendedores que ya estaban.
+   Si es de antes del retiro personal, corré además [002_retiro_personal.sql](packages/backend/src/db/migrations/002_retiro_personal.sql) una sola vez. Archiva en `movimientos_fiado_archivado` los movimientos de fiado antes de borrarlos: no se convierten a retiro, porque una cuenta por cobrar no es plata que salió de la caja.
+2. Completa `DATABASE_URL` y las credenciales de AssemblyAI/Twilio en `.env`. Si vas a probar el canal telefónico, rellená también `SEED_VENDOR_TELEFONO` (y opcionalmente `SEED_VENDOR_NOMBRE` y `SEED_VENDOR_NEGOCIO`) y creá ese vendedor con `pnpm --filter @rimpilot/backend seed`; falla si le falta el teléfono en lugar de inventar uno. Para el navegador no hace falta: quien entra por la web crea su cuenta desde la página.
+3. Copia `packages/dashboard/.env.local.example` como `packages/dashboard/.env.local`. Añade ahí `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `RIMPILOT_SESSION_SECRET` (mínimo 32 caracteres: `openssl rand -base64 32`). Ese secreto firma la cookie de sesión y **sin él el libro responde 503**, porque muestra la plata y las transcripciones de una persona real. Cada vendedor ve solo su propio libro: todas las consultas filtran por el id de su sesión.
 4. Arranca el backend y abre un túnel público:
 
 ```bash
@@ -68,17 +69,26 @@ inglés en [docs/hackathon-submission.md](docs/hackathon-submission.md) y
 
 Wari registra tres movimientos y, al cerrar, lee ventas `S/ 75`, gastos `S/ 15`, retiros `S/ 20` y caja `S/ 40`. Vendió 75 y le quedan 40: esa resta es el producto. El dashboard muestra cada entrada y la transcripción que la originó.
 
-## Las dos puertas
+## Las puertas
 
 | Ruta | Qué es | Acceso |
 | --- | --- | --- |
 | `/` | Landing: el problema, la resta de 75 a 40 y con qué está hecho | **pública** |
-| `/libro` | El libro contable, con la plata y las transcripciones reales | Basic Auth |
+| `/crear-cuenta` | Correo y contraseña, y el libro queda abierto | **pública** |
+| `/entrar` | Volver a un libro que ya existe | **pública** |
+| `/libro` | El libro contable, con la plata y las transcripciones reales | sesión firmada |
 
-La landing existe porque antes el sitio entero pedía contraseña: quien abría la
-URL veía una ventana de credenciales y nada más. La CSP y las cabeceras de
-seguridad siguen aplicándose a las dos; lo único que cambia es quién necesita
-clave.
+Desde la landing se entra de dos maneras: creando una cuenta, o con **Probar sin
+registrarme**, que abre un libro vacío sin pedir nada. Ese libro de prueba no es
+compartido: cada visita recibe el suyo, aislado del de todos los demás, y se
+pierde al cerrar la sesión (regla 12).
+
+La sesión es una cookie `httpOnly` firmada con HMAC —el id del vendedor no viaja
+suelto— y todas las consultas del libro filtran por ese id: cambiar el UUID de
+un movimiento en la URL devuelve 404, no el libro de otra persona.
+
+La CSP y las cabeceras de seguridad se aplican a todas las rutas, públicas
+incluidas; lo único que cambia es quién necesita sesión.
 
 ## Desplegarlo
 
@@ -140,9 +150,9 @@ pnpm build
 | `RIMPILOT_INTERNAL_KEY` | Clave servidor-a-servidor con la que el panel pide el token del micrófono. Mínimo 32 caracteres; sin ella `/navegador/token` responde 503. Va también en `packages/dashboard/.env.local`. |
 | `RIMPILOT_ORIGENES_PERMITIDOS` | Orígenes que pueden abrir el WebSocket del navegador, separados por coma. Vacío = solo `localhost`. |
 | `ASSEMBLYAI_VOICE_URL` | Opcional. Solo para apuntar a un mock en pruebas; vacío usa la API real. |
-| `SEED_VENDOR_TELEFONO`, `SEED_VENDOR_NOMBRE`, `SEED_VENDOR_NEGOCIO` | Vendedor inicial para `pnpm --filter @rimpilot/backend seed`. El teléfono es obligatorio; nombre y negocio quedan en `NULL` si no los das. |
-| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RIMPILOT_VENDOR_ID` | Van en `packages/dashboard/.env.local`. El servicio consulta solo ese vendedor y la key nunca se expone al navegador. |
-| `RIMPILOT_DASHBOARD_USER`, `RIMPILOT_DASHBOARD_PASSWORD` | Basic Auth del panel, en `packages/dashboard/.env.local`. Obligatorias: sin ellas el panel devuelve 503. |
+| `SEED_VENDOR_TELEFONO`, `SEED_VENDOR_NOMBRE`, `SEED_VENDOR_NEGOCIO` | Vendedor del canal telefónico para `pnpm --filter @rimpilot/backend seed`. El teléfono es obligatorio; nombre y negocio quedan en `NULL` si no los das. Quien entra por la web no lo necesita. |
+| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Van en `packages/dashboard/.env.local`. La key nunca se expone al navegador. |
+| `RIMPILOT_SESSION_SECRET` | Firma la cookie de sesión del panel, en `packages/dashboard/.env.local`. Mínimo 32 caracteres y obligatoria: sin ella el libro devuelve 503 y nadie entra. |
 | `NEXT_PUBLIC_SITE_URL` | URL pública del panel; alimenta metadata, Open Graph y `sitemap.xml`. |
 | `RIMPILOT_BACKEND_URL`, `NEXT_PUBLIC_BACKEND_WS_URL` | En `packages/dashboard/.env.local`. La primera la usa el servidor de Next para pedir el token; la segunda la usa el navegador para abrir el WebSocket, y su origen se agrega a `connect-src` de la CSP. |
 

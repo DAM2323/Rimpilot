@@ -1,43 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { COOKIE_SESION, vendedorDeSesion } from "./lib/sesion";
 
 /**
- * El panel muestra el libro contable y las transcripciones de una persona real.
- * No hay sistema de usuarios todavía, así que la puerta mínima es Basic Auth:
- * sin credenciales configuradas el panel no sirve nada (falla cerrado).
+ * El libro muestra la plata y las transcripciones de una persona. Antes lo
+ * protegía un Basic Auth con una credencial compartida, porque había un solo
+ * vendedor por despliegue; ahora cada uno tiene su cuenta y la puerta es la
+ * sesión firmada.
+ *
+ * Acá solo se comprueba la firma, no la contraseña: el middleware corre en el
+ * runtime Edge y bcrypt necesita Node. Las contraseñas se verifican en las
+ * rutas de /api/cuenta, que corren en Node.
  */
-const LARGO_MINIMO_CLAVE = 16;
 
-async function sha256(valor: string): Promise<Uint8Array> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(valor));
-  return new Uint8Array(digest);
-}
-
-/** Comparación en tiempo constante sobre digests de largo fijo. */
-function iguales(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false;
-  let diferencia = 0;
-  for (let i = 0; i < a.length; i += 1) diferencia |= a[i] ^ b[i];
-  return diferencia === 0;
-}
-
-function decodificarBasic(header: string): { usuario: string; clave: string } | null {
-  try {
-    const bytes = Uint8Array.from(atob(header.slice(6)), (caracter) => caracter.charCodeAt(0));
-    const texto = new TextDecoder().decode(bytes);
-    const separador = texto.indexOf(":");
-    if (separador < 0) return null;
-    return { usuario: texto.slice(0, separador), clave: texto.slice(separador + 1) };
-  } catch {
-    return null;
-  }
-}
-
-/**
- * CSP estricta: los scripts solo corren con el nonce de esta respuesta y lo que
- * ellos carguen hereda permiso por `strict-dynamic`. Sin `unsafe-inline` en
- * script-src y sin `unsafe-eval` fuera de desarrollo, donde el hot reload de
- * Next lo exige.
- */
 /**
  * El backend de voz corre en otro puerto (y en otro host al desplegarlo), así que
  * `connect-src 'self'` bloquearía el WebSocket del micrófono. Se agrega ese
@@ -88,21 +62,25 @@ function aplicarCabeceras(respuesta: NextResponse, csp: string): NextResponse {
 }
 
 /**
- * Lo que pide clave. El resto del sitio —la landing— es público, pero pasa por
- * acá igual: la CSP y las cabeceras de seguridad valen para toda respuesta, no
- * solo para las protegidas.
+ * Lo que exige sesión. El resto del sitio —la landing, entrar, crear cuenta—
+ * es público, pero pasa por acá igual: la CSP y las cabeceras de seguridad
+ * valen para toda respuesta, no solo para las protegidas.
  */
-function exigeClave(ruta: string): boolean {
+function exigeSesion(ruta: string): boolean {
   // `/api/voz` entra porque emite el token que abre una sesión de voz, y cada
-  // sesión se paga.
+  // sesión se paga. Además ese token dice de quién es el libro donde se escribe.
   return ruta === "/libro" || ruta.startsWith("/libro/") || ruta.startsWith("/api/voz");
 }
 
-function conNonce(request: NextRequest, nonce: string, csp: string): NextResponse {
+function conNonce(request: NextRequest, nonce: string, csp: string, vendedorId?: string): NextResponse {
   // Next lee la CSP de la petición para poner el nonce en sus <script>.
   const cabeceras = new Headers(request.headers);
   cabeceras.set("x-nonce", nonce);
   cabeceras.set("Content-Security-Policy", csp);
+  // El dueño del libro viaja en una cabecera que el servidor reescribe en cada
+  // petición: lo que mande el cliente con ese nombre se descarta acá.
+  if (vendedorId) cabeceras.set("x-vendedor", vendedorId);
+  else cabeceras.delete("x-vendedor");
   return NextResponse.next({ request: { headers: cabeceras } });
 }
 
@@ -110,46 +88,36 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const nonce = crypto.randomUUID().replaceAll("-", "");
   const csp = politicaDeSeguridad(nonce, process.env.NODE_ENV !== "production");
 
-  if (!exigeClave(request.nextUrl.pathname)) {
-    return aplicarCabeceras(conNonce(request, nonce, csp), csp);
-  }
-
-  const usuarioEsperado = process.env.RIMPILOT_DASHBOARD_USER;
-  const claveEsperada = process.env.RIMPILOT_DASHBOARD_PASSWORD;
-  if (!usuarioEsperado || !claveEsperada || claveEsperada.length < LARGO_MINIMO_CLAVE) {
-    return aplicarCabeceras(new NextResponse(
-      `Panel bloqueado: falta RIMPILOT_DASHBOARD_USER o RIMPILOT_DASHBOARD_PASSWORD (mínimo ${LARGO_MINIMO_CLAVE} caracteres) en packages/dashboard/.env.local.`,
-      { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } },
-    ), csp);
-  }
-
-  const header = request.headers.get("authorization");
-  if (header?.startsWith("Basic ")) {
-    const credenciales = decodificarBasic(header);
-    if (credenciales) {
-      const [usuario, clave, esperadoUsuario, esperadaClave] = await Promise.all([
-        sha256(credenciales.usuario), sha256(credenciales.clave),
-        sha256(usuarioEsperado), sha256(claveEsperada),
-      ]);
-      if (iguales(usuario, esperadoUsuario) && iguales(clave, esperadaClave)) {
-        return aplicarCabeceras(conNonce(request, nonce, csp), csp);
-      }
+  let vendedorId: string | null = null;
+  try {
+    vendedorId = await vendedorDeSesion(request.cookies.get(COOKIE_SESION)?.value);
+  } catch (error) {
+    // Falta el secreto de sesión: nadie puede entrar, y hay que decirlo.
+    if (exigeSesion(request.nextUrl.pathname)) {
+      return aplicarCabeceras(new NextResponse(
+        error instanceof Error ? error.message : "Sesión mal configurada.",
+        { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } },
+      ), csp);
     }
   }
 
-  return aplicarCabeceras(new NextResponse("Autenticación requerida.", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="RIMPILOT", charset="UTF-8"',
-      "content-type": "text/plain; charset=utf-8",
-    },
-  }), csp);
+  if (!exigeSesion(request.nextUrl.pathname)) {
+    return aplicarCabeceras(conNonce(request, nonce, csp, vendedorId ?? undefined), csp);
+  }
+
+  if (!vendedorId) {
+    const destino = new URL("/entrar", request.url);
+    destino.searchParams.set("volver", request.nextUrl.pathname);
+    return aplicarCabeceras(NextResponse.redirect(destino), csp);
+  }
+
+  return aplicarCabeceras(conNonce(request, nonce, csp, vendedorId), csp);
 }
 
 export const config = {
   /**
    * Cubre todo salvo estáticos, porque la CSP y las cabeceras van en cada
-   * respuesta. Quién necesita clave lo decide `exigeClave`, no este matcher:
+   * respuesta. Quién necesita sesión lo decide `exigeSesion`, no este matcher:
    * la landing pasa por acá y sale sin pedir nada.
    */
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|logo.png|logo-simbolo.png|opengraph-image|robots.txt|sitemap.xml|llms.txt|captura-microfono.js).*)"],

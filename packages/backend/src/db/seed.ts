@@ -2,9 +2,13 @@ import "../env.js";
 import { sql } from "./client.js";
 
 /**
- * Carga el vendedor inicial. Regla 2: sin variables de entorno no hay identidad
- * por defecto, el script falla. Antes esto era un INSERT fijo dentro de
- * schema.sql, que dejaba una fila conocida en toda base creada con él.
+ * Carga un vendedor del canal telefónico: el que llama por Twilio no pasa por
+ * la web, así que su fila la crea alguien acá. Quien entra por el navegador se
+ * registra solo y no necesita este script.
+ *
+ * Regla 2: sin variables de entorno no hay identidad por defecto, el script
+ * falla. Antes esto era un INSERT fijo dentro de schema.sql, que dejaba una
+ * fila conocida en toda base creada con él.
  */
 function requerido(nombre: string): string {
   const valor = process.env[nombre]?.trim();
@@ -33,6 +37,6 @@ const [vendedor] = await sql()<{ id: string; telefono: string }[]>`
 `;
 
 console.log(`Vendedor listo para ${vendedor.telefono}.`);
-console.log(`Copiá esta línea en packages/dashboard/.env.local:\n\nRIMPILOT_VENDOR_ID=${vendedor.id}\n`);
+console.log(`Su id es ${vendedor.id}. Ya puede llamar y registrar movimientos por teléfono.`);
 
 await sql().end();

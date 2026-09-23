@@ -46,13 +46,11 @@ Dos cosas que rompen el micrófono si se pasan por alto:
    | --- | --- |
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxxx.supabase.co` |
    | `SUPABASE_SERVICE_ROLE_KEY` | La secret key de Supabase |
-   | `RIMPILOT_VENDOR_ID` | El UUID del seed |
+   | `RIMPILOT_SESSION_SECRET` | Mínimo 32 caracteres: `openssl rand -base64 32` |
    | `RIMPILOT_BACKEND_URL` | `https://rimpilot-backend.onrender.com` |
    | `RIMPILOT_INTERNAL_KEY` | **La misma** que en Render |
    | `NEXT_PUBLIC_BACKEND_WS_URL` | `wss://rimpilot-backend.onrender.com/navegador/stream` |
    | `NEXT_PUBLIC_SITE_URL` | La URL que te dé Vercel |
-   | `RIMPILOT_DASHBOARD_USER` | El usuario del panel |
-   | `RIMPILOT_DASHBOARD_PASSWORD` | Mínimo 16 caracteres |
 
    Ojo con el `wss://`, no `ws://`: desde una página HTTPS un WebSocket sin
    cifrar queda bloqueado.

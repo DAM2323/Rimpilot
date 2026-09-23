@@ -133,6 +133,18 @@ if not exist "packages\dashboard\.env.local" (
   exit /b 1
 )
 
+set "SECRETO_SESION="
+for /f "tokens=1,* delims==" %%a in ('findstr /b "RIMPILOT_SESSION_SECRET=" "packages\dashboard\.env.local"') do set "SECRETO_SESION=%%b"
+if not defined SECRETO_SESION (
+  echo.
+  echo   [X] Falta RIMPILOT_SESSION_SECRET en packages\dashboard\.env.local
+  echo       Firma la cookie con la que entras a tu libro. Sin ella el panel
+  echo       responde 503. Pega cualquier texto largo, de 32 letras o mas.
+  echo.
+  pause
+  exit /b 1
+)
+
 for /f "tokens=1,* delims==" %%a in ('findstr /b "RIMPILOT_INTERNAL_KEY=" ".env"') do set "CLAVE_BACKEND=%%b"
 for /f "tokens=1,* delims==" %%a in ('findstr /b "RIMPILOT_INTERNAL_KEY=" "packages\dashboard\.env.local"') do set "CLAVE_PANEL=%%b"
 if not "%CLAVE_BACKEND%"=="%CLAVE_PANEL%" (
