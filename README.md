@@ -150,6 +150,7 @@ pnpm build
 | `RIMPILOT_INTERNAL_KEY` | Clave servidor-a-servidor con la que el panel pide el token del micrófono. Mínimo 32 caracteres; sin ella `/navegador/token` responde 503. Va también en `packages/dashboard/.env.local`. |
 | `RIMPILOT_ORIGENES_PERMITIDOS` | Orígenes que pueden abrir el WebSocket del navegador, separados por coma. Vacío = solo `localhost`. |
 | `ASSEMBLYAI_VOICE_URL` | Opcional. Solo para apuntar a un mock en pruebas; vacío usa la API real. |
+| `ASSEMBLYAI_VOZ` | Opcional. La voz de Wari; vacío usa `lola`, la única del catálogo con acento nativo en español. Solo se aceptan nombres del [catálogo](https://www.assemblyai.com/docs/voice-agents/voice-agent-api/voices): uno inventado no arranca el backend, porque la API lo ignora en silencio y habla en inglés. |
 | `SEED_VENDOR_TELEFONO`, `SEED_VENDOR_NOMBRE`, `SEED_VENDOR_NEGOCIO` | Vendedor del canal telefónico para `pnpm --filter @rimpilot/backend seed`. El teléfono es obligatorio; nombre y negocio quedan en `NULL` si no los das. Quien entra por la web no lo necesita. |
 | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Van en `packages/dashboard/.env.local`. La key nunca se expone al navegador. |
 | `RIMPILOT_SESSION_SECRET` | Firma la cookie de sesión del panel, en `packages/dashboard/.env.local`. Mínimo 32 caracteres y obligatoria: sin ella el libro devuelve 503 y nadie entra. |
