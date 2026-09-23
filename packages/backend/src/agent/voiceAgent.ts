@@ -252,7 +252,7 @@ export class VoiceAgentBridge {
     if (name === "registrar_venta") {
       const args = ventaSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
-        tipo: "venta", descripcion: args.descripcion, monto: args.monto, contraparte: args.contraparte,
+        tipo: "venta", descripcion: args.descripcion ?? "Venta", monto: args.monto, contraparte: args.contraparte,
         metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
@@ -260,7 +260,7 @@ export class VoiceAgentBridge {
     if (name === "registrar_gasto") {
       const args = gastoSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
-        tipo: "gasto", descripcion: args.descripcion, monto: args.monto, metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
+        tipo: "gasto", descripcion: args.descripcion ?? "Gasto", monto: args.monto, metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
     }

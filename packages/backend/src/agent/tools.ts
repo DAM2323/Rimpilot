@@ -58,10 +58,38 @@ export const herramientas = [
   },
 ] as const;
 
+/**
+ * Los esquemas de arriba le dicen al modelo qué mandar; estos son la red por
+ * si no lo hace. Un modelo manda `"300"` en vez de `300` y `"Efectivo"` en vez
+ * de `"efectivo"` todo el tiempo, y rechazar por eso significa perder la venta
+ * entera: el vendedor la dijo, Wari la confirmó y el libro quedó vacío. Vale
+ * más anotarla con menos detalle que no anotarla.
+ */
+const METODOS = ["efectivo", "yape", "plin", "transferencia"] as const;
+
+const metodoPago = z.preprocess((valor) => {
+  if (typeof valor !== "string") return undefined;
+  const limpio = valor.trim().toLowerCase();
+  // Un método que no conocemos queda sin especificar, no tumba el movimiento.
+  return (METODOS as readonly string[]).includes(limpio) ? limpio : undefined;
+}, z.enum(METODOS).optional());
+
+/** Acepta 300, "300", "300.50" y "S/ 300"; rechaza lo que no sea un número. */
+const monto = z.preprocess((valor) => {
+  if (typeof valor === "number") return valor;
+  if (typeof valor !== "string") return valor;
+  const numero = Number(valor.replace(/[^\d.,-]/g, "").replace(",", "."));
+  return Number.isFinite(numero) ? numero : valor;
+}, z.number().positive());
+
+const texto = z.preprocess(
+  (valor) => (typeof valor === "string" && valor.trim() ? valor.trim() : undefined),
+  z.string().optional(),
+);
+
 export const ventaSchema = z.object({
-  descripcion: z.string().min(1), monto: z.number().positive(),
-  metodo_pago: z.enum(["efectivo", "yape", "plin", "transferencia"]).optional(), contraparte: z.string().optional(), transcripcion: z.string().min(1).optional(),
+  descripcion: texto, monto, metodo_pago: metodoPago, contraparte: texto, transcripcion: texto,
 });
-export const gastoSchema = z.object({ descripcion: z.string().min(1), monto: z.number().positive(), metodo_pago: z.enum(["efectivo", "yape", "plin", "transferencia"]).optional(), transcripcion: z.string().min(1).optional() });
-export const retiroSchema = z.object({ monto: z.number().positive(), motivo: z.string().optional(), metodo_pago: z.enum(["efectivo", "yape", "plin", "transferencia"]).optional(), transcripcion: z.string().min(1).optional() });
+export const gastoSchema = z.object({ descripcion: texto, monto, metodo_pago: metodoPago, transcripcion: texto });
+export const retiroSchema = z.object({ monto, motivo: texto, metodo_pago: metodoPago, transcripcion: texto });
 export const resumenSchema = z.object({ fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() });
