@@ -30,6 +30,48 @@ export type FormatoAudio = { encoding: "audio/pcmu" | "audio/pcm" };
 export const FORMATO_TELEFONO: FormatoAudio = { encoding: "audio/pcmu" };
 export const FORMATO_NAVEGADOR: FormatoAudio = { encoding: "audio/pcm" };
 
+/**
+ * El catálogo documentado de voces, copiado tal cual de
+ * https://www.assemblyai.com/docs/voice-agents/voice-agent-api/voices
+ *
+ * Esta lista existe por un error que costó días: pedimos `diego`, un nombre que
+ * no está en el catálogo. La API no devuelve ningún error por eso —acepta la
+ * sesión, transcribe, usa el prompt y las herramientas— y simplemente vuelve a
+ * su voz por defecto, que es inglesa. El síntoma era "la voz sigue siendo de
+ * mujer" sin una sola línea en el log que lo explicara.
+ *
+ * De ahí la regla del propio starter de AssemblyAI: solo IDs del catálogo,
+ * nunca inventar uno. Acá se comprueba al arrancar, no en producción.
+ */
+const VOCES_DOCUMENTADAS = [
+  // Acento estadounidense
+  "alba", "eve", "george", "jane", "jean", "mary", "michael",
+  // Acento británico
+  "anna", "charles", "paul", "vera",
+  // Acento nativo en su idioma
+  "giovanni", "lola", "juergen", "rafael", "estelle",
+] as const;
+
+type Voz = (typeof VOCES_DOCUMENTADAS)[number];
+
+/**
+ * `lola` es la única voz con acento nativo en español del catálogo. Es de
+ * España y RIMPILOT es para Perú, así que el acento no es el del vendedor; aun
+ * así es la opción correcta, porque las alternativas hablan español con acento
+ * inglés. Hoy no hay ninguna voz masculina en español.
+ */
+const VOZ: Voz = "lola";
+
+/** Falla al arrancar, no en medio de una llamada que además se paga. */
+function vozValida(voz: string): Voz {
+  if (!(VOCES_DOCUMENTADAS as readonly string[]).includes(voz)) {
+    throw new Error(
+      `La voz "${voz}" no está en el catálogo de AssemblyAI. Usá una de: ${VOCES_DOCUMENTADAS.join(", ")}.`,
+    );
+  }
+  return voz as Voz;
+}
+
 /** Lo que el puente necesita saber de la sesión, sea teléfono o navegador. */
 export type ContextoSesion = Omit<ToolContext, "getTranscript"> & { formato: FormatoAudio };
 
@@ -178,7 +220,7 @@ export class VoiceAgentBridge {
           keyterms: ["Yape", "Plin", "retiro", "caja", "RIMPILOT"],
           turn_detection: { min_silence: 800, max_silence: 2200, interrupt_response: true },
         },
-        output: { type: "audio", voice: "diego", format: this.context.formato },
+        output: { type: "audio", voice: vozValida(VOZ), format: this.context.formato },
       },
     });
   }
