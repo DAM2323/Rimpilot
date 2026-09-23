@@ -1,0 +1,35 @@
+# Despliegue del backend de voz.
+#
+# El panel va a Vercel, pero el backend NO puede: sostiene un WebSocket abierto
+# durante toda la conversación y las funciones serverless de Vercel se cortan a
+# los segundos. Necesita un proceso vivo, y eso es lo que da Render.
+services:
+  - type: web
+    name: rimpilot-backend
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @rimpilot/backend build
+    startCommand: node packages/backend/dist/index.js
+    healthCheckPath: /health
+    envVars:
+      # Render inyecta PORT; el backend ya lo lee y escucha en 0.0.0.0.
+      - key: NODE_VERSION
+        value: 22.13.0
+      - key: NODE_ENV
+        value: production
+      # Estas se cargan a mano en el panel de Render. Ninguna va al repo.
+      - key: ASSEMBLYAI_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: STREAM_TOKEN_SECRET
+        sync: false
+      - key: RIMPILOT_INTERNAL_KEY
+        sync: false
+      # El origen del panel desplegado. Sin esto el WebSocket lo rechaza.
+      - key: RIMPILOT_ORIGENES_PERMITIDOS
+        sync: false
+      - key: MAX_LLAMADAS_CONCURRENTES
+        value: "5"

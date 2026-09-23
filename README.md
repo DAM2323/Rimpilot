@@ -68,6 +68,13 @@ inglés en [docs/hackathon-submission.md](docs/hackathon-submission.md) y
 
 Wari registra tres movimientos y, al cerrar, lee ventas `S/ 75`, gastos `S/ 15`, retiros `S/ 20` y caja `S/ 40`. Vendió 75 y le quedan 40: esa resta es el producto. El dashboard muestra cada entrada y la transcripción que la originó.
 
+## Desplegarlo
+
+El panel va a Vercel y el backend a Render: sostiene un WebSocket abierto toda
+la conversación, y una función serverless se corta antes. Los pasos, las
+variables y el aviso del plan gratuito están en
+[docs/despliegue.md](docs/despliegue.md).
+
 ## Arquitectura
 
 ```text
