@@ -110,8 +110,9 @@ for /f "tokens=1,* delims==" %%a in ('findstr /b "RIMPILOT_INTERNAL_KEY=" ".env"
 for /f "tokens=1,* delims==" %%a in ('findstr /b "RIMPILOT_INTERNAL_KEY=" "packages\dashboard\.env.local"') do set "CLAVE_PANEL=%%b"
 if not "%CLAVE_BACKEND%"=="%CLAVE_PANEL%" (
   echo.
-  echo   [!] RIMPILOT_INTERNAL_KEY no coincide entre .env y .env.local
-  echo       El microfono va a fallar con "El backend de voz rechazo la sesion".
+  echo   [!] Revisa que RIMPILOT_INTERNAL_KEY sea igual en .env y en
+  echo       packages\dashboard\.env.local. Si no coinciden, el microfono
+  echo       falla con "El backend de voz rechazo la sesion".
   echo.
 )
 echo         ok.
