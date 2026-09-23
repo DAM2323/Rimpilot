@@ -155,6 +155,12 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
           onAudio: (audio) => send({ tipo: "audio", audio }),
           onBargeIn: () => send({ tipo: "limpiar" }),
           onTranscript: (texto, final) => send({ tipo: "transcripcion", texto, final }),
+          onTranscripcionDeWari: (texto) => {
+            // Queda en el log y además se muestra: en una demo, ver la
+            // conversación escrita es la mitad de lo que hay que mostrar.
+            request.log.info({ wari: texto }, "Wari dijo");
+            send({ tipo: "wari", texto });
+          },
           /**
            * Cada evento, en orden, salvo `reply.audio`, que llega cien veces por
            * segundo y ahogaría todo lo demás: de ese se registra solo el primero

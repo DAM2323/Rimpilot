@@ -65,6 +65,7 @@ function aFloat32(muestra: number): number {
 export function MicrofonoWari() {
   const [estado, setEstado] = useState<Estado>("inactivo");
   const [transcripcion, setTranscripcion] = useState("");
+  const [respuesta, setRespuesta] = useState("");
   const [error, setError] = useState("");
   const sesion = useRef<Sesion | null>(null);
 
@@ -149,6 +150,7 @@ export function MicrofonoWari() {
   const empezar = useCallback(async (): Promise<void> => {
     setError("");
     setTranscripcion("");
+    setRespuesta("");
     setEstado("conectando");
 
     const wsUrl = process.env.NEXT_PUBLIC_BACKEND_WS_URL;
@@ -212,6 +214,8 @@ export function MicrofonoWari() {
         activa.siguienteInicio = 0;
       } else if (mensaje.tipo === "transcripcion" && typeof mensaje.texto === "string") {
         setTranscripcion(mensaje.texto);
+      } else if (mensaje.tipo === "wari" && typeof mensaje.texto === "string") {
+        setRespuesta(mensaje.texto);
       } else if (mensaje.tipo === "aviso" || mensaje.tipo === "error") {
         setError(mensaje.mensaje ?? "La sesión de voz falló.");
       }
@@ -237,6 +241,7 @@ export function MicrofonoWari() {
       {estado === "escuchando" ? "Wari te está escuchando." : ocupado ? "Abriendo la sesión de voz…" : "Micrófono apagado."}
     </p>
     {transcripcion && <blockquote className="mic-transcripcion">{transcripcion}</blockquote>}
+    {respuesta && <blockquote className="mic-respuesta"><span>Wari</span>{respuesta}</blockquote>}
     {error && <p className="mic-error" role="alert">{error}</p>}
   </section>;
 }
