@@ -93,6 +93,13 @@ cliente nunca ve.
 
 `packages/backend` contiene el puente de voz y las reglas de negocio. `packages/dashboard` contiene el libro contable. La base de datos vive en Supabase y usa PostgreSQL directamente desde el backend.
 
+## Arranque rapido en Windows
+
+Doble clic en [`rimpilot.bat`](rimpilot.bat): trae los ultimos cambios, actualiza
+dependencias, revisa que la configuracion este completa y levanta backend y
+panel. Si lo dejas suelto en una carpeta vacia, clona el repositorio primero,
+asi el mismo archivo sirve para empezar de cero y para ponerte al dia.
+
 ## Comandos
 
 ```bash
