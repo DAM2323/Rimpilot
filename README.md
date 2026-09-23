@@ -95,10 +95,14 @@ cliente nunca ve.
 
 ## Arranque rapido en Windows
 
-Doble clic en [`rimpilot.bat`](rimpilot.bat): trae los ultimos cambios, actualiza
-dependencias, revisa que la configuracion este completa y levanta backend y
-panel. Si lo dejas suelto en una carpeta vacia, clona el repositorio primero,
-asi el mismo archivo sirve para empezar de cero y para ponerte al dia.
+Doble clic en [`rimpilot.bat`](rimpilot.bat): actualiza el proyecto, instala lo
+que falte, revisa que la configuracion este completa y levanta backend y panel.
+
+Funciona desde donde lo dejes. Si lo guardas suelto en Descargas o en el
+Escritorio, **busca tu copia del proyecto antes de clonar** —en la carpeta de
+usuario, en Descargas, en el Escritorio— y actualiza esa. Solo clona si no
+encuentra ninguna. Un mismo archivo sirve para empezar de cero y para ponerte al
+dia, sin terminar con dos carpetas y editando la equivocada.
 
 ## Comandos
 
