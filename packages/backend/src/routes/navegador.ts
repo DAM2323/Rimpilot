@@ -5,7 +5,7 @@ import { z } from "zod";
 import { textoDeFrame } from "../agent/rawData.js";
 import { FORMATO_NAVEGADOR, VoiceAgentBridge } from "../agent/voiceAgent.js";
 import { crearStreamToken, verificarStreamToken } from "../agent/streamToken.js";
-import { sesionesActivas, tomarCupo } from "../agent/cupo.js";
+import { sesionesActivas, tomarCupo, type Rechazo } from "../agent/cupo.js";
 import { consultarResumen } from "../services/libroContable.js";
 
 /**
@@ -31,6 +31,13 @@ const mensajeNavegadorSchema = z.discriminatedUnion("tipo", [
 ]);
 
 const tokenBodySchema = z.object({ vendedorId: z.string().uuid() });
+
+/** Lo que ve la persona según qué tope se alcanzó. Ninguno es un error suyo. */
+const MENSAJE_RECHAZO: Record<Rechazo, string> = {
+  simultaneas: "Hay demasiadas conversaciones abiertas ahora. Probá en un momento.",
+  diaria_vendedor: "Ya hablaste mucho con Wari hoy. Mañana podés seguir.",
+  diaria_total: "Wari atendió todo lo que podía por hoy. Probá mañana.",
+};
 
 function claveInterna(): string | null {
   const valor = process.env.RIMPILOT_INTERNAL_KEY;
@@ -64,8 +71,9 @@ function origenPermitido(origen: string | undefined): boolean {
 
 export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) => {
   /**
-   * El panel (que ya está detrás de Basic Auth) pide el token desde el servidor
-   * con la clave interna. El navegador nunca ve la clave ni elige el vendedor.
+   * El panel pide el token desde el servidor, con la clave interna y el
+   * vendedor de la sesión ya verificada. El navegador nunca ve la clave ni
+   * elige de quién es el libro.
    */
   app.post("/token", {
     config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
@@ -139,16 +147,16 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
           socket.close();
           return;
         }
-        const cupo = tomarCupo();
-        if (!cupo) {
-          request.log.warn({ activas: sesionesActivas() }, "Sesión de navegador rechazada: tope de sesiones simultáneas");
-          send({ tipo: "error", mensaje: "Hay demasiadas sesiones abiertas. Probá en un momento." });
+        const cupo = tomarCupo(verificado);
+        if ("rechazo" in cupo) {
+          request.log.warn({ rechazo: cupo.rechazo, activas: sesionesActivas() }, "Sesión de navegador rechazada por tope");
+          send({ tipo: "error", mensaje: MENSAJE_RECHAZO[cupo.rechazo] });
           socket.close();
           return;
         }
         clearTimeout(plazo);
         vendedorId = verificado;
-        liberarCupo = cupo;
+        liberarCupo = cupo.liberar;
 
         agent = new VoiceAgentBridge({ vendedorId, formato: FORMATO_NAVEGADOR }, {
           onReady: () => send({ tipo: "listo" }),
@@ -196,6 +204,12 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
             // Antes esto moría en el log del servidor: el vendedor veía el
             // micrófono encendido y nada más, sin saber que algo había fallado.
             send({ tipo: "aviso", mensaje: mensajeError });
+          },
+          onLimite: (mensajeLimite) => {
+            request.log.info({ mensaje: mensajeLimite }, "Sesión de voz cerrada por duración máxima");
+            send({ tipo: "error", mensaje: `${mensajeLimite} Tocá Hablar con Wari para seguir.` });
+            cerrar();
+            socket.close();
           },
           onFatal: (mensajeError) => {
             // Regla 20: mensaje real, nunca un micrófono abierto contra la nada.

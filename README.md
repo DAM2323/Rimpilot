@@ -147,6 +147,9 @@ pnpm build
 | `PUBLIC_URL` | URL pública del backend, normalmente la URL HTTPS de ngrok en desarrollo. |
 | `STREAM_TOKEN_SECRET` | Firma el token que autoriza el Media Stream. Mínimo 32 caracteres; el backend falla al arrancar una llamada sin él. |
 | `MAX_LLAMADAS_CONCURRENTES` | Tope de sesiones simultáneas de AssemblyAI. Es un solo contador para el teléfono y el navegador. Por defecto 5. |
+| `MAX_SESIONES_POR_VENDEDOR_DIA` | Sesiones de voz por vendedor por día de Lima. Por defecto 20. |
+| `MAX_SESIONES_DIA` | Sesiones de voz por día en total. Por defecto 200. Es el tope que acota el gasto: el modo invitado da una cuenta por visita, así que la cuota por vendedor sola no alcanza. |
+| `MAX_MINUTOS_POR_SESION` | Duración máxima de una sesión. Por defecto 10. Una pestaña olvidada con el micrófono abierto no factura para siempre. |
 | `RIMPILOT_INTERNAL_KEY` | Clave servidor-a-servidor con la que el panel pide el token del micrófono. Mínimo 32 caracteres; sin ella `/navegador/token` responde 503. Va también en `packages/dashboard/.env.local`. |
 | `RIMPILOT_ORIGENES_PERMITIDOS` | Orígenes que pueden abrir el WebSocket del navegador, separados por coma. Vacío = solo `localhost`. |
 | `ASSEMBLYAI_VOICE_URL` | Opcional. Solo para apuntar a un mock en pruebas; vacío usa la API real. |
