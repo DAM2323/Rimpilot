@@ -7,7 +7,7 @@ import { ListaMovimientos } from "../../components/ListaMovimientos";
 import { LiveRefresh } from "../../components/LiveRefresh";
 import { MicrofonoWari } from "../../components/MicrofonoWari";
 import { ResumenDelDia } from "../../components/ResumenDelDia";
-import { dashboardConfigurado, fechaLima, obtenerFlujo, obtenerMovimientos, obtenerResumen, obtenerVendedor } from "../../lib/data";
+import { dashboardConfigurado, fechaLima, obtenerFlujo, obtenerMovimientos, obtenerResumen, obtenerVendedor, saludoLima } from "../../lib/data";
 import { proporcionDeLaSemana } from "../../lib/proporcion";
 import { vendedorActual } from "../../lib/vendedorActual";
 import type { TipoMovimiento } from "../../lib/types";
@@ -35,7 +35,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { tipo
     <LiveRefresh />
     <aside className="sidebar"><Image className="brand-mark" src={marca} alt="RIMPILOT" width={44} height={35} priority/><div className="sidebar-line active"/><div className="sidebar-line"/><div className="sidebar-line"/></aside>
     <section className="workspace">
-      <header className="topbar"><div><p className="kicker">{fecha}</p><h1>Buenos días, {nombre}</h1></div><div className="topbar-derecha"><div className="voice-status"><span className="pulse"/><Mic size={17} aria-hidden="true"/> Wari está listo</div><form method="post" action="/api/cuenta/salir"><button type="submit" className="salir">{invitado ? "Terminar prueba" : "Salir"}</button></form></div></header>
+      <header className="topbar"><div><p className="kicker">{fecha}</p><h1>{saludoLima()}, {nombre}</h1></div><div className="topbar-derecha"><div className="voice-status"><span className="pulse"/><Mic size={17} aria-hidden="true"/> Wari está listo</div><form method="post" action="/api/cuenta/salir"><button type="submit" className="salir">{invitado ? "Terminar prueba" : "Salir"}</button></form></div></header>
       {invitado && <aside className="aviso-invitado" role="status"><strong>Estás probando RIMPILOT.</strong> Este libro es solo tuyo y nadie más lo ve, pero se pierde cuando cierres la sesión. <Link href="/crear-cuenta">Creá tu cuenta</Link> para conservarlo.</aside>}
       {!configured && <aside className="configuration-warning" role="status"><strong>Panel sin conectar.</strong> Configura las variables en <code>packages/dashboard/.env.local</code> para mostrar el libro real. No se muestran datos de demostración.</aside>}
       <section className="intro"><div><h2>Tu caja, clara.</h2><p>Así se movió tu negocio hoy. Cada registro viene directo de tu voz.</p></div><span className="today">HOY</span></section>

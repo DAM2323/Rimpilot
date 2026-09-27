@@ -8,8 +8,10 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "seed": "tsx src/db/seed.ts",
+    "limpiar-invitados": "tsx src/db/limpiarInvitados.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint src --ext .ts --max-warnings 0"
+    "lint": "eslint src --ext .ts --max-warnings 0",
+    "test": "node --import tsx --test \"test/**/*.test.ts\""
   },
   "dependencies": {
     "@fastify/formbody": "^8.0.2",

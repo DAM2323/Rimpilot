@@ -76,7 +76,7 @@ function vozValida(voz: string): Voz {
   return voz as Voz;
 }
 
-function vozElegida(): Voz {
+export function vozElegida(): Voz {
   const pedida = process.env.ASSEMBLYAI_VOZ?.trim().toLowerCase();
   return pedida ? vozValida(pedida) : VOZ_POR_DEFECTO;
 }
@@ -115,6 +115,16 @@ function parseEvent(raw: WebSocket.RawData): AgentEvent | null {
   return result.success ? result.data : null;
 }
 
+/**
+ * Duración máxima de una sesión. Una pestaña olvidada con el micrófono abierto,
+ * o una llamada que nadie cuelga, mantiene una sesión de AssemblyAI facturando
+ * sin que nadie hable. Diez minutos sobran para contar un día de ventas.
+ */
+const MINUTOS_POR_SESION = (() => {
+  const valor = Number(process.env.MAX_MINUTOS_POR_SESION);
+  return Number.isFinite(valor) && valor > 0 ? valor : 10;
+})();
+
 /** Reintentos ante saturación de AssemblyAI antes de cortar la llamada. */
 const MAX_REINTENTOS = 2;
 const ESTADOS_RECUPERABLES = new Set([429, 500, 502, 503, 504]);
@@ -127,6 +137,7 @@ export class VoiceAgentBridge {
   private intentos = 0;
   private reconectando = false;
   private cerradoPorNosotros = false;
+  private plazo: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly context: ContextoSesion,
@@ -160,11 +171,24 @@ export class VoiceAgentBridge {
       onError: (message: string) => void;
       /** La sesión no se puede sostener: hay que cortar la llamada, no dejar al vendedor en silencio. */
       onFatal: (message: string) => void;
+      /**
+       * Se cumplió la duración máxima. Es un corte esperado, no una falla: el
+       * canal puede decirle a la persona algo distinto de "Wari se desconectó".
+       * Si no se define, se trata como `onFatal`.
+       */
+      onLimite?: (message: string) => void;
     },
   ) {
     const key = process.env.ASSEMBLYAI_API_KEY;
     if (!key) throw new Error("ASSEMBLYAI_API_KEY es obligatoria.");
     this.conectar(key);
+    this.plazo = setTimeout(() => {
+      if (this.cerradoPorNosotros) return;
+      const mensaje = `La sesión llegó a su límite de ${MINUTOS_POR_SESION} minutos.`;
+      (this.handlers.onLimite ?? this.handlers.onFatal)(mensaje);
+    }, MINUTOS_POR_SESION * 60 * 1000);
+    // No mantiene vivo el proceso por sí solo: si el servidor se apaga, se apaga.
+    this.plazo.unref?.();
   }
 
   private conectar(key: string): void {
@@ -179,6 +203,9 @@ export class VoiceAgentBridge {
     });
     this.socket.on("close", () => {
       if (this.cerradoPorNosotros || this.reconectando) return;
+      // La sesión ya terminó por otro lado: el plazo no tiene nada que cortar.
+      if (this.plazo) clearTimeout(this.plazo);
+      this.plazo = null;
       this.handlers.onFatal("AssemblyAI cerró la sesión de voz.");
     });
   }
@@ -215,6 +242,8 @@ export class VoiceAgentBridge {
 
   close(): void {
     this.cerradoPorNosotros = true;
+    if (this.plazo) clearTimeout(this.plazo);
+    this.plazo = null;
     if (this.socket.readyState === WebSocket.OPEN) this.send({ type: "session.end" });
     this.socket.close();
   }

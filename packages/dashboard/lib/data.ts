@@ -26,6 +26,18 @@ export function fechaLima(date = new Date()): string {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
+/**
+ * El saludo según la hora de Lima, no la del servidor: en Vercel el servidor
+ * corre en UTC y a las cinco de la tarde en Lima ya son las diez de la noche.
+ * Antes decía "Buenos días" siempre.
+ */
+export function saludoLima(date = new Date()): string {
+  const hora = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Lima", hour: "numeric", hourCycle: "h23" }).format(date));
+  if (hora >= 5 && hora < 12) return "Buenos días";
+  if (hora >= 12 && hora < 19) return "Buenas tardes";
+  return "Buenas noches";
+}
+
 function siguienteFecha(fecha: string): string {
   const date = new Date(`${fecha}T12:00:00Z`);
   date.setUTCDate(date.getUTCDate() + 1);

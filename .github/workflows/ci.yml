@@ -50,6 +50,12 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # Sesión firmada, redirect seguro, freno de intentos, cupos de voz,
+      # parseo de lo que manda el modelo y voces del catálogo. Cada prueba se
+      # verificó rompiendo el código a propósito: si el código está mal, falla.
+      - name: Pruebas
+        run: pnpm test
+
       # El build del panel no necesita variables de entorno: sin ellas Next usa
       # los valores por defecto y el panel avisa en pantalla que no está
       # conectado, que es justo lo que tiene que pasar.

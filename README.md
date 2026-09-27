@@ -18,7 +18,7 @@ RIMPILOT fue creado desde cero para el AssemblyAI Voice Agent Hackathon 2026. El
 
 ## Levantarlo en menos de cinco minutos
 
-Requisitos: Node.js 20+, pnpm, una base PostgreSQL de Supabase, una cuenta de AssemblyAI con acceso a Voice Agent API, Twilio y ngrok.
+Requisitos: Node.js 22.13+ (lo exige pnpm 11), pnpm, una base PostgreSQL de Supabase, una cuenta de AssemblyAI con acceso a Voice Agent API, Twilio y ngrok.
 
 ```bash
 git clone https://github.com/DAM2323/Rimpilot.git
@@ -80,8 +80,18 @@ Wari registra tres movimientos y, al cerrar, lee ventas `S/ 75`, gastos `S/ 15`,
 
 Desde la landing se entra de dos maneras: creando una cuenta, o con **Probar sin
 registrarme**, que abre un libro vacío sin pedir nada. Ese libro de prueba no es
-compartido: cada visita recibe el suyo, aislado del de todos los demás, y se
-pierde al cerrar la sesión (regla 12).
+compartido: cada visita recibe el suyo, aislado del de todos los demás (regla 12).
+
+Y se borra de verdad. **Terminar prueba** elimina el libro del invitado, sus
+movimientos y lo que dijo; no solo le quita el acceso. Para los que cierran la
+pestaña sin tocarlo:
+
+```bash
+pnpm --filter @rimpilot/backend limpiar-invitados            # solo cuenta, no borra
+pnpm --filter @rimpilot/backend limpiar-invitados --borrar   # borra los de más de 24 h
+```
+
+Solo toca libros de prueba: una cuenta registrada no entra en ningún caso.
 
 La sesión es una cookie `httpOnly` firmada con HMAC —el id del vendedor no viaja
 suelto— y todas las consultas del libro filtran por ese id: cambiar el UUID de
@@ -134,6 +144,7 @@ pnpm dev:backend      # Fastify en :3001
 pnpm dev:dashboard    # Next.js en :3000
 pnpm typecheck
 pnpm lint
+pnpm test             # sesión, cupos de voz, redirect seguro, freno de intentos…
 pnpm build
 ```
 
@@ -147,6 +158,9 @@ pnpm build
 | `PUBLIC_URL` | URL pública del backend, normalmente la URL HTTPS de ngrok en desarrollo. |
 | `STREAM_TOKEN_SECRET` | Firma el token que autoriza el Media Stream. Mínimo 32 caracteres; el backend falla al arrancar una llamada sin él. |
 | `MAX_LLAMADAS_CONCURRENTES` | Tope de sesiones simultáneas de AssemblyAI. Es un solo contador para el teléfono y el navegador. Por defecto 5. |
+| `MAX_SESIONES_POR_VENDEDOR_DIA` | Sesiones de voz por vendedor por día de Lima. Por defecto 20. |
+| `MAX_SESIONES_DIA` | Sesiones de voz por día en total. Por defecto 200. Es el tope que acota el gasto: el modo invitado da una cuenta por visita, así que la cuota por vendedor sola no alcanza. |
+| `MAX_MINUTOS_POR_SESION` | Duración máxima de una sesión. Por defecto 10. Una pestaña olvidada con el micrófono abierto no factura para siempre. |
 | `RIMPILOT_INTERNAL_KEY` | Clave servidor-a-servidor con la que el panel pide el token del micrófono. Mínimo 32 caracteres; sin ella `/navegador/token` responde 503. Va también en `packages/dashboard/.env.local`. |
 | `RIMPILOT_ORIGENES_PERMITIDOS` | Orígenes que pueden abrir el WebSocket del navegador, separados por coma. Vacío = solo `localhost`. |
 | `ASSEMBLYAI_VOICE_URL` | Opcional. Solo para apuntar a un mock en pruebas; vacío usa la API real. |

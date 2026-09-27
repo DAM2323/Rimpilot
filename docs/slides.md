@@ -134,12 +134,15 @@ advisor.
 >
 > **The model never computes money.** It reads totals the backend calculated.
 >
-> Shared session cap across both channels · RLS on every table · strict CSP ·
+> Own ledger per account, isolated guest mode · spend capped per session, per
+> vendor and per day · RLS on every table · strict CSP · 42 tests in CI ·
 > axe-core: 0 violations
 
 **Say:** This is someone's income, so none of it is on trust. Every number is
 traceable to speech, the model is not allowed to invent or calculate one, and the
 API path is built so a malicious client cannot reach another vendor's ledger.
+Anyone can try it as a guest, so the cost is capped too: a guest cannot drain the
+key, and a forgotten tab stops billing after ten minutes.
 
 ---
 

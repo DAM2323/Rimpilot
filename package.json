@@ -13,6 +13,7 @@
     "dev:dashboard": "pnpm --filter @rimpilot/dashboard dev",
     "build": "pnpm --filter @rimpilot/backend build && pnpm --filter @rimpilot/dashboard build",
     "lint": "pnpm --filter @rimpilot/backend lint && pnpm --filter @rimpilot/dashboard lint",
-    "typecheck": "pnpm --filter @rimpilot/backend typecheck && pnpm --filter @rimpilot/dashboard typecheck"
+    "typecheck": "pnpm --filter @rimpilot/backend typecheck && pnpm --filter @rimpilot/dashboard typecheck",
+    "test": "pnpm --filter @rimpilot/backend test && pnpm --filter @rimpilot/dashboard test"
   }
 }

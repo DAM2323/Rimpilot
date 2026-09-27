@@ -73,14 +73,14 @@ export const streamRoutes: FastifyPluginCallback = (app, _opciones, listo) => {
           socket.close();
           return;
         }
-        const cupo = tomarCupo();
-        if (!cupo) {
-          request.log.warn({ streamSid, activas: sesionesActivas() }, "Stream rechazado: tope de sesiones simultáneas");
+        const cupo = tomarCupo(verificado);
+        if ("rechazo" in cupo) {
+          request.log.warn({ streamSid, rechazo: cupo.rechazo, activas: sesionesActivas() }, "Stream rechazado por tope");
           socket.close();
           return;
         }
         vendedorId = verificado;
-        liberarCupo = cupo;
+        liberarCupo = cupo.liberar;
 
         agent = new VoiceAgentBridge({ vendedorId, callSid, formato: FORMATO_TELEFONO }, {
           onReady: () => request.log.info({ streamSid }, "Wari listo para recibir audio"),

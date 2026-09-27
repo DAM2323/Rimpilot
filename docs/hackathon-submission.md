@@ -93,10 +93,20 @@ the backend calculated.
   could ask to write into another vendor's ledger. Audio goes through our backend
   instead: the API key never leaves the server, and the vendor ID always comes
   from an HMAC-signed token, never from a client message.
-- **Spend is capped.** One shared session counter across both channels, because
-  two channels of five would have been ten billable sessions on one key.
+- **Spend is capped, four ways.** The landing page is public and anyone can try
+  it as a guest, so every session is billable to one shared key. There is a cap
+  on concurrent sessions, on sessions per vendor per day, on sessions per day in
+  total — the one that matters, since each guest is a new account with its own
+  daily quota — and a ten-minute limit per session, so a forgotten tab does not
+  bill forever. A rejected session is turned away before it ever reaches
+  AssemblyAI, so it costs nothing.
 - **Real degradation.** On 429 or 503 the bridge retries with backoff and then
   fails with an actual error instead of leaving an open microphone in silence.
+- **Accounts without a shared demo account.** Sign up with email and password, or
+  try it as a guest: each guest gets an empty ledger of their own, never a shared
+  one. Ending the trial deletes it for real — the entries and the words, not just
+  the access. Every query filters by the signed-in owner; changing a UUID in the
+  URL returns 404, and that was tested, not assumed.
 - **Accessibility measured, not assumed.** axe-core reports zero violations on
   desktop and mobile, in every state. Contrast values were computed against the
   real surfaces, not eyeballed — one brand colour was rejected for text because it
@@ -106,11 +116,20 @@ the backend calculated.
 
 Shipped and verified:
 
-- Browser microphone end to end, verified in Chromium on desktop and Pixel 7
+- Browser microphone end to end: live against AssemblyAI, and in an automated
+  run against a mock that speaks the real protocol — sign up, talk, the tool
+  call, the row in the ledger, the transcript on the detail page, and the
+  session caps
 - The three movement types, the cash subtraction, and the weekly ratio, verified
   against a real PostgreSQL
-- Traceable transcripts on every entry
-- Dashboard behind auth, strict CSP with per-request nonce, RLS on every table
+- Traceable transcripts on every entry, and both sides of the conversation on
+  screen while it happens
+- Accounts and isolated guest ledgers, strict CSP with per-request nonce,
+  security headers on every response including static files, RLS on every table
+- 42 automated tests in CI. Each one was checked by breaking the code on
+  purpose and watching it fail
+- Accessibility with axe-core on every page, desktop and a Pixel 7 viewport
+  (emulated, not a physical phone): zero violations
 
 Not claimed:
 

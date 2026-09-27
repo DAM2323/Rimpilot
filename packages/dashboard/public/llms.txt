@@ -1,19 +1,27 @@
 # RIMPILOT
 
-> Contabilidad por voz para vendedores informales. Una persona llama por teléfono, le cuenta a Wari sus ventas, gastos y fiados en lenguaje natural, y RIMPILOT los organiza en un libro contable auditable que se ve en un panel web.
+> Contabilidad por voz para vendedores informales en Perú. La persona le cuenta a Wari, en lenguaje natural, lo que vendió, lo que gastó en el negocio y lo que sacó de la caja para ella, y RIMPILOT lo ordena en un libro contable auditable que se ve en un panel web.
 
-RIMPILOT no da consejo financiero, no evalúa crédito y no se conecta a bancos. Construye el historial ordenado que puede habilitar eso más adelante.
+El problema que resuelve cabe en una resta: el vendedor sabe que vendió S/ 75 y no sabe por qué en la caja hay S/ 40. Lo que falta casi siempre es plata que sacó para sí mismo durante el día y no anotó nadie. Por eso Wari, antes de cerrar, pregunta una vez: ¿sacaste algo de la caja para ti hoy?
+
+RIMPILOT no da consejo financiero, no evalúa crédito y no se conecta a bancos.
+
+## Cómo se usa
+
+- En la página principal se crea una cuenta con correo y contraseña, o se entra como invitado sin registrarse. Cada invitado recibe su propio libro vacío, aislado del de los demás.
+- En el libro se toca "Hablar con Wari" y se habla por el micrófono del navegador. También se puede llamar por teléfono (Twilio).
+- Lo que dice la persona y lo que responde Wari aparecen escritos en pantalla, y cada movimiento aparece en el libro sin recargar.
 
 ## Cómo funciona
 
-- La llamada entra por Twilio Media Streams y se puentea en G.711 μ-law con la Voice Agent API de AssemblyAI, sin recodificar el audio.
-- Wari, el agente conversacional en español, dispone de cuatro herramientas: registrar venta, registrar gasto, registrar cuenta por cobrar y consultar el resumen del día.
-- Cada movimiento guarda el fragmento de transcripción que lo originó, de modo que todo registro se puede rastrear hasta las palabras que lo produjeron.
-- Los totales los calcula la base de datos con SQL, nunca el modelo.
+- La voz es la Voice Agent API de AssemblyAI. El navegador no se conecta directo: el audio pasa por el backend, así la clave no sale del servidor y nadie puede escribir en el libro de otra persona.
+- Wari tiene cuatro herramientas: registrar venta, registrar gasto del negocio, registrar retiro personal y consultar el resumen del día.
+- Cada movimiento guarda la frase exacta que lo originó: todo registro se puede rastrear hasta las palabras que lo produjeron.
+- Los totales y la proporción semanal de retiros los calcula el código, nunca el modelo. Wari lee los números, no los inventa.
 
-## Alcance del panel
+## Privacidad
 
-El panel es privado y está detrás de autenticación. Muestra el libro de un solo negocio por despliegue: resumen del día, movimientos con filtros, detalle auditable de cada uno y flujo de caja de los últimos siete días.
+El libro de cada persona es privado. Solo se ve con su sesión, y cada consulta filtra por su identificador: cambiar un id en la dirección no muestra datos de otra cuenta.
 
 ## Notas
 

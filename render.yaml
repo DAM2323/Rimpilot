@@ -31,5 +31,12 @@ services:
       # El origen del panel desplegado. Sin esto el WebSocket lo rechaza.
       - key: RIMPILOT_ORIGENES_PERMITIDOS
         sync: false
+      # Topes de gasto contra la clave de AssemblyAI (regla 17).
       - key: MAX_LLAMADAS_CONCURRENTES
         value: "5"
+      - key: MAX_SESIONES_POR_VENDEDOR_DIA
+        value: "20"
+      - key: MAX_SESIONES_DIA
+        value: "200"
+      - key: MAX_MINUTOS_POR_SESION
+        value: "10"
