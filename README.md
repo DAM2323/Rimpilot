@@ -18,7 +18,7 @@ RIMPILOT fue creado desde cero para el AssemblyAI Voice Agent Hackathon 2026. El
 
 ## Levantarlo en menos de cinco minutos
 
-Requisitos: Node.js 20+, pnpm, una base PostgreSQL de Supabase, una cuenta de AssemblyAI con acceso a Voice Agent API, Twilio y ngrok.
+Requisitos: Node.js 22.13+ (lo exige pnpm 11), pnpm, una base PostgreSQL de Supabase, una cuenta de AssemblyAI con acceso a Voice Agent API, Twilio y ngrok.
 
 ```bash
 git clone https://github.com/DAM2323/Rimpilot.git
@@ -134,6 +134,7 @@ pnpm dev:backend      # Fastify en :3001
 pnpm dev:dashboard    # Next.js en :3000
 pnpm typecheck
 pnpm lint
+pnpm test             # sesión, cupos de voz, redirect seguro, freno de intentos…
 pnpm build
 ```
 

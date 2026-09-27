@@ -23,3 +23,13 @@ describe("freno de intentos (regla 9)", () => {
     assert.equal(permitir("registro:5.5.5.5", 3, t + 15 * 60 * 1000 + 1), true);
   });
 });
+
+describe("tope de tamaño del almacén (regla 9)", () => {
+  it("no crece sin límite aunque lleguen miles de orígenes a la vez", async () => {
+    const { origenesRecordados } = await import("../lib/limite");
+    const t = Date.now();
+    // Ninguno vence: todos dentro de la misma ventana de 15 minutos.
+    for (let i = 0; i < 20_000; i += 1) permitir(`entrar:10.${i >> 16}.${(i >> 8) & 255}.${i & 255}`, 8, t);
+    assert.ok(origenesRecordados() <= 5_001, `recuerda ${origenesRecordados()} orígenes`);
+  });
+});

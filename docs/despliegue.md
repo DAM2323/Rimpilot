@@ -30,8 +30,10 @@ Dos cosas que rompen el micrófono si se pasan por alto:
    | `RIMPILOT_INTERNAL_KEY` | `openssl rand -base64 32` |
    | `RIMPILOT_ORIGENES_PERMITIDOS` | La URL del panel (paso 2). Se completa después. |
 
-   **No reutilices los secretos de desarrollo.** Los `dev-local-no-usar-en-produccion-*`
-   están escritos en este repo, así que cualquiera que lo lea puede firmar tokens.
+   **Generá secretos nuevos para producción; no copies los de tu `.env` local.**
+   Los que usás en tu computadora pasaron por tu terminal, tu editor y quizás
+   alguna captura de pantalla. Los de producción no tienen que haber estado en
+   ningún otro lado.
 
 3. Anotá la URL que te da Render: `https://rimpilot-backend.onrender.com`.
 
