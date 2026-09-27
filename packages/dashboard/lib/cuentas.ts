@@ -87,3 +87,29 @@ export async function crearInvitado(): Promise<Resultado> {
   }
   return { ok: true, vendedorId: data.id as string };
 }
+
+/**
+ * Borra un libro de prueba. Al invitado se le dice que su libro "se pierde al
+ * cerrar la sesión", y antes eso era verdad solo a medias: perdía el acceso,
+ * pero sus movimientos y lo que dijo quedaban en la base para siempre.
+ *
+ * Filtra por id **y** por `es_invitado`: aunque alguien llegara acá con el id
+ * de una cuenta real, esta función no la toca.
+ */
+export async function borrarInvitado(vendedorId: string): Promise<boolean> {
+  const cliente = db();
+  const { data } = await cliente.from("vendedores").select("id")
+    .eq("id", vendedorId).eq("es_invitado", true).maybeSingle();
+  if (!data) return false;
+
+  // Primero lo que cuelga del vendedor: las claves foráneas no borran en cascada.
+  const movimientos = await cliente.from("movimientos").delete().eq("vendedor_id", vendedorId);
+  const resumenes = await cliente.from("resumen_diario").delete().eq("vendedor_id", vendedorId);
+  const vendedor = await cliente.from("vendedores").delete().eq("id", vendedorId).eq("es_invitado", true);
+  const error = movimientos.error ?? resumenes.error ?? vendedor.error;
+  if (error) {
+    console.error("salir: no se pudo borrar el libro de prueba", error);
+    return false;
+  }
+  return true;
+}

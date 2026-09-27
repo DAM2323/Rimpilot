@@ -80,8 +80,18 @@ Wari registra tres movimientos y, al cerrar, lee ventas `S/ 75`, gastos `S/ 15`,
 
 Desde la landing se entra de dos maneras: creando una cuenta, o con **Probar sin
 registrarme**, que abre un libro vacío sin pedir nada. Ese libro de prueba no es
-compartido: cada visita recibe el suyo, aislado del de todos los demás, y se
-pierde al cerrar la sesión (regla 12).
+compartido: cada visita recibe el suyo, aislado del de todos los demás (regla 12).
+
+Y se borra de verdad. **Terminar prueba** elimina el libro del invitado, sus
+movimientos y lo que dijo; no solo le quita el acceso. Para los que cierran la
+pestaña sin tocarlo:
+
+```bash
+pnpm --filter @rimpilot/backend limpiar-invitados            # solo cuenta, no borra
+pnpm --filter @rimpilot/backend limpiar-invitados --borrar   # borra los de más de 24 h
+```
+
+Solo toca libros de prueba: una cuenta registrada no entra en ningún caso.
 
 La sesión es una cookie `httpOnly` firmada con HMAC —el id del vendedor no viaja
 suelto— y todas las consultas del libro filtran por ese id: cambiar el UUID de
