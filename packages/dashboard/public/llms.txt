@@ -9,7 +9,7 @@ RIMPILOT no da consejo financiero, no evalúa crédito y no se conecta a bancos.
 ## Cómo se usa
 
 - En la página principal se crea una cuenta con correo y contraseña, o se entra como invitado sin registrarse. Cada invitado recibe su propio libro vacío, aislado del de los demás.
-- En el libro se toca "Empezar a hablar" y se habla por el micrófono del navegador. También se puede llamar por teléfono (Twilio).
+- En el libro se toca "Empezar a hablar" y se habla por el micrófono del navegador.
 - Lo que dice la persona y lo que responde RIMPILOT aparecen escritos en pantalla, y cada movimiento aparece en el libro sin recargar.
 - Está en español y en inglés. Se abre en el idioma del navegador y se cambia con el selector ES / EN; en inglés RIMPILOT también habla inglés. Los montos siempre en soles.
 
