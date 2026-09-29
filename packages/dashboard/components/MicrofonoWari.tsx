@@ -355,14 +355,18 @@ export function MicrofonoWari({ idioma }: { idioma: Idioma }) {
     {turnos.length > 0 ? (
       // role="log": un lector de pantalla anuncia cada frase nueva sin repetir
       // toda la conversación.
-      <ol className="conversacion" role="log" aria-live="polite" aria-label={t.conversacion}>
-        {turnos.map((turno) => (
-          <li key={turno.id} className={`burbuja ${turno.quien}`}>
-            <span className="burbuja-quien">{turno.quien === "wari" ? "Wari" : t.tu}</span>
-            <span className="burbuja-texto">{turno.texto}</span>
-          </li>
-        ))}
-      </ol>
+      // El `log` va en un envoltorio y no en la lista: puesto en el <ol> le
+      // quita la semántica de lista y cada <li> queda huérfano (axe: listitem).
+      <div role="log" aria-live="polite" aria-label={t.conversacion}>
+        <ol className="conversacion">
+          {turnos.map((turno) => (
+            <li key={turno.id} className={`burbuja ${turno.quien}`}>
+              <span className="burbuja-quien">{turno.quien === "wari" ? "Wari" : t.tu}</span>
+              <span className="burbuja-texto">{turno.texto}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
     ) : (
       <div className="conversacion-vacia">
         <p>{t.vacio}</p>

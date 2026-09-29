@@ -106,7 +106,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   }
 
   if (!vendedorId) {
-    const destino = new URL("/entrar", request.url);
+    /**
+     * Acá no sirve una ruta relativa como en las rutas de cuenta: Next exige una
+     * URL absoluta en el middleware y responde 500. Y `request.url` fuera de
+     * Vercel dice `localhost`, así que la base es la dirección pública del sitio.
+     */
+    const destino = new URL("/entrar", process.env.NEXT_PUBLIC_SITE_URL || request.url);
     destino.searchParams.set("volver", request.nextUrl.pathname);
     return aplicarCabeceras(NextResponse.redirect(destino), csp);
   }

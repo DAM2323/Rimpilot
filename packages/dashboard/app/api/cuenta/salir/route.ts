@@ -1,5 +1,6 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { borrarInvitado } from "../../../../lib/cuentas";
+import { redirigir } from "../../../../lib/redirigir";
 import { COOKIE_SESION, vendedorDeSesion } from "../../../../lib/sesion";
 
 export const runtime = "nodejs";
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   const vendedorId = await vendedorDeSesion(request.cookies.get(COOKIE_SESION)?.value).catch(() => null);
   if (vendedorId) await borrarInvitado(vendedorId);
 
-  const respuesta = NextResponse.redirect(new URL("/", new URL(request.url).origin), { status: 303 });
+  const respuesta = redirigir("/");
   respuesta.cookies.delete(COOKIE_SESION);
   return respuesta;
 }

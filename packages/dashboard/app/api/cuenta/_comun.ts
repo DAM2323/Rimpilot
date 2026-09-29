@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import type { NextResponse } from "next/server";
+import { redirigir } from "../../../lib/redirigir";
 import { COOKIE_SESION, crearSesion, opcionesCookie } from "../../../lib/sesion";
 import type { CodigoError } from "../../../lib/textos";
 
@@ -11,12 +12,11 @@ import type { CodigoError } from "../../../lib/textos";
  * El error viaja como código, no como frase: la página lo muestra en el idioma
  * de quien la mira, y un texto inventado en `?error=` no se muestra nunca.
  */
-export function aError(origen: string, ruta: string, codigo: CodigoError, volver?: string | null): NextResponse {
-  const url = new URL(ruta, origen);
-  url.searchParams.set("error", codigo);
+export function aError(ruta: string, codigo: CodigoError, volver?: string | null): NextResponse {
+  const parametros = new URLSearchParams({ error: codigo });
   // Si venía de un enlace profundo, no se pierde al fallar el primer intento.
-  if (volver) url.searchParams.set("volver", volver);
-  return NextResponse.redirect(url, { status: 303 });
+  if (volver) parametros.set("volver", volver);
+  return redirigir(`${ruta}?${parametros.toString()}`);
 }
 
 /**
@@ -37,8 +37,8 @@ export function destinoSeguro(volver: unknown): string {
   return volver;
 }
 
-export async function entrarAlLibro(origen: string, vendedorId: string, volver?: unknown): Promise<NextResponse> {
-  const respuesta = NextResponse.redirect(new URL(destinoSeguro(volver), origen), { status: 303 });
+export async function entrarAlLibro(vendedorId: string, volver?: unknown): Promise<NextResponse> {
+  const respuesta = redirigir(destinoSeguro(volver));
   respuesta.cookies.set(COOKIE_SESION, await crearSesion(vendedorId), opcionesCookie());
   return respuesta;
 }

@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import type { NextResponse } from "next/server";
 import { COOKIE_IDIOMA, esIdioma, volverSeguro } from "../../../lib/idioma";
+import { redirigir } from "../../../lib/redirigir";
 
 /**
  * Cambia el idioma y vuelve a la página donde estaba la persona.
@@ -9,10 +10,9 @@ import { COOKIE_IDIOMA, esIdioma, volverSeguro } from "../../../lib/idioma";
  * teclado como cualquier enlace.
  */
 export function GET(request: Request): NextResponse {
-  const url = new URL(request.url);
-  const idioma = url.searchParams.get("a");
-  const destino = new URL(volverSeguro(url.searchParams.get("volver")), url.origin);
-  const respuesta = NextResponse.redirect(destino, { status: 303 });
+  const parametros = new URL(request.url).searchParams;
+  const idioma = parametros.get("a");
+  const respuesta = redirigir(volverSeguro(parametros.get("volver")));
   if (esIdioma(idioma)) {
     respuesta.cookies.set(COOKIE_IDIOMA, idioma, {
       httpOnly: true,

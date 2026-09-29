@@ -6,9 +6,8 @@ import { aError, entrarAlLibro } from "../_comun";
 export const runtime = "nodejs";
 
 export async function POST(request: Request): Promise<Response> {
-  const origen = new URL(request.url).origin;
   if (!permitir(`registro:${quien(request)}`, 10)) {
-    return aError(origen, "/crear-cuenta", "intentos");
+    return aError("/crear-cuenta", "intentos");
   }
 
   const formulario = await request.formData();
@@ -23,10 +22,10 @@ export async function POST(request: Request): Promise<Response> {
     // El primer campo que falló dice qué mensaje mostrar.
     const campo = datos.error.issues[0]?.path[0];
     const codigo = campo === "email" ? "correo_invalido" : campo === "clave" ? "clave_corta" : "datos";
-    return aError(origen, "/crear-cuenta", codigo, volver as string | null);
+    return aError("/crear-cuenta", codigo, volver as string | null);
   }
 
   const resultado = await registrar(datos.data);
-  if (!resultado.ok) return aError(origen, "/crear-cuenta", resultado.codigo, volver as string | null);
-  return entrarAlLibro(origen, resultado.vendedorId, volver);
+  if (!resultado.ok) return aError("/crear-cuenta", resultado.codigo, volver as string | null);
+  return entrarAlLibro(resultado.vendedorId, volver);
 }

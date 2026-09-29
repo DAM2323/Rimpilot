@@ -353,6 +353,14 @@ p { text-wrap: pretty; }
   .topbar-marca { width: 44px; height: 44px; }
   .topbar-izquierda { gap: 12px; }
   .topbar h1 { font-size: 1.25rem; }
+  /* En el teléfono el saludo manda: el selector y Salir suben a su propia
+     fila, arriba a la derecha, y el saludo usa todo el ancho. En la misma fila
+     "Terminar prueba" partía "Buenas noches" en dos. Siguen por encima de 24 px. */
+  .topbar { flex-wrap: wrap; row-gap: 14px; }
+  .topbar-derecha { order: -1; width: 100%; justify-content: flex-end; gap: 6px; }
+  .topbar-derecha .selector-idioma { padding: 2px; }
+  .topbar-derecha .selector-idioma a { min-width: 32px; min-height: 32px; padding: 0 6px; font-size: .75rem; }
+  .topbar-derecha .salir { padding: 0 12px; min-height: 36px; font-size: .8125rem; }
   .panel-wari { padding: 18px; gap: 20px; }
   .orbe { width: 84px; height: 84px; }
   .burbuja { max-width: 94%; }
