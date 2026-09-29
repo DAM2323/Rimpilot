@@ -70,7 +70,6 @@ const es = {
         items: [
           ["AssemblyAI Voice Agent API", "Escucha en español o en inglés, sabe cuándo terminaste de hablar, se deja interrumpir y llama a las herramientas que escriben en el libro."],
           ["Micrófono del navegador", "PCM16 a 24 kHz por WebSocket, siempre a través del servidor: si no, cualquiera podría escribir en el libro de otro vendedor."],
-          ["Twilio", "El mismo agente por teléfono, para el vendedor que en ese momento no tiene datos."],
         ],
       },
       {
@@ -275,7 +274,6 @@ const en: Textos = {
         items: [
           ["AssemblyAI Voice Agent API", "Listens in Spanish or English, knows when you've finished speaking, can be interrupted, and calls the tools that write to the ledger."],
           ["Browser microphone", "PCM16 at 24 kHz over WebSocket, always through the server: otherwise anyone could write to another vendor's ledger."],
-          ["Twilio", "The same agent over the phone, for the vendor who has no mobile data right then."],
         ],
       },
       {
