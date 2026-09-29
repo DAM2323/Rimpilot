@@ -1,8 +1,19 @@
-# Despliegue del backend de voz.
+# Despliegue completo de RIMPILOT en Render: el backend de voz y el panel.
 #
-# El panel va a Vercel, pero el backend NO puede: sostiene un WebSocket abierto
-# durante toda la conversación y las funciones serverless de Vercel se cortan a
-# los segundos. Necesita un proceso vivo, y eso es lo que da Render.
+# Render → New → Blueprint → este repo. Crea los dos servicios de una vez y
+# pide solo las cuatro variables marcadas `sync: false`. Los secretos internos
+# los genera Render; ninguno pasa por el repo ni por el chat.
+#
+# El backend no puede ir a una plataforma serverless: sostiene un WebSocket
+# abierto durante toda la conversación y necesita un proceso vivo.
+#
+# Las URLs de abajo asumen que Render respeta los nombres de los servicios.
+# Si alguno estaba tomado, Render agrega un sufijo: corregí las URLs en el
+# panel de Render y volvé a desplegar el panel (NEXT_PUBLIC_* se compila).
+#
+# NODE_ENV=production haría que pnpm saltee las devDependencies, y sin
+# TypeScript no hay build: de ahí el --prod=false. pnpm va por npx con la
+# versión exacta del repo, sin depender de lo que traiga la imagen de Render.
 services:
   - type: web
     name: rimpilot-backend
@@ -10,27 +21,28 @@ services:
     plan: free
     region: oregon
     branch: main
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @rimpilot/backend build
+    buildCommand: npx --yes pnpm@11.19.0 install --frozen-lockfile --prod=false && npx --yes pnpm@11.19.0 --filter @rimpilot/backend build
     startCommand: node packages/backend/dist/index.js
     healthCheckPath: /health
     envVars:
       # Render inyecta PORT; el backend ya lo lee y escucha en 0.0.0.0.
       - key: NODE_VERSION
-        value: 22.13.0
+        value: "22"
       - key: NODE_ENV
         value: production
-      # Estas se cargan a mano en el panel de Render. Ninguna va al repo.
+      # Se cargan a mano al crear el Blueprint. Ninguna va al repo.
       - key: ASSEMBLYAI_API_KEY
         sync: false
       - key: DATABASE_URL
         sync: false
+      # Secretos internos: Render genera 256 bits aleatorios.
       - key: STREAM_TOKEN_SECRET
-        sync: false
+        generateValue: true
       - key: RIMPILOT_INTERNAL_KEY
-        sync: false
-      # El origen del panel desplegado. Sin esto el WebSocket lo rechaza.
+        generateValue: true
+      # El origen del panel. Sin esto el WebSocket rechaza al panel desplegado.
       - key: RIMPILOT_ORIGENES_PERMITIDOS
-        sync: false
+        value: https://rimpilot.onrender.com
       # Topes de gasto contra la clave de AssemblyAI (regla 17).
       - key: MAX_LLAMADAS_CONCURRENTES
         value: "5"
@@ -40,3 +52,39 @@ services:
         value: "200"
       - key: MAX_MINUTOS_POR_SESION
         value: "10"
+
+  - type: web
+    name: rimpilot
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: npx --yes pnpm@11.19.0 install --frozen-lockfile --prod=false && npx --yes pnpm@11.19.0 --filter @rimpilot/dashboard build
+    startCommand: cd packages/dashboard && node_modules/.bin/next start -H 0.0.0.0 -p $PORT
+    healthCheckPath: /robots.txt
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Se cargan a mano al crear el Blueprint.
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # Firma de la cookie de sesión (regla 10: 32 caracteres mínimo).
+      - key: RIMPILOT_SESSION_SECRET
+        generateValue: true
+      # La misma clave que el backend, tomada de él: no hay que copiarla.
+      - key: RIMPILOT_INTERNAL_KEY
+        fromService:
+          type: web
+          name: rimpilot-backend
+          envVarKey: RIMPILOT_INTERNAL_KEY
+      - key: RIMPILOT_BACKEND_URL
+        value: https://rimpilot-backend.onrender.com
+      # wss://, no ws://: desde HTTPS un WebSocket sin cifrar queda bloqueado.
+      - key: NEXT_PUBLIC_BACKEND_WS_URL
+        value: wss://rimpilot-backend.onrender.com/navegador/stream
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://rimpilot.onrender.com
