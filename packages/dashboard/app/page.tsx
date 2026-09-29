@@ -59,7 +59,6 @@ export default function Landing({ searchParams }: { searchParams: { error?: stri
     <section className="landing-hero">
       <div className="landing-hero-texto">
         <h1>{t.titulo1}<br /><span>{t.titulo2}</span></h1>
-        <p className="landing-bajada">{t.bajada}</p>
         <p className="landing-remate"><span className="landing-regla" aria-hidden="true" /><span>{t.remate} <em>{t.remateFuerte}</em></span></p>
 
         {error && <p className="landing-error" role="alert">{error}</p>}

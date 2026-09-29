@@ -69,7 +69,7 @@ for the number the whole ledger depends on.
 
 > One button. Plain Spanish. No menus.
 >
-> *"Vendí tres pollos a veinticinco soles cada uno, me pagaron por Yape,
+> *"Vendí tres polos a veinticinco soles cada uno, me pagaron por Yape,
 > gasté quince en pasaje y me saqué veinte para el almuerzo."*
 >
 > → three separate entries, filed while she is still talking

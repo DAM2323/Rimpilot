@@ -66,7 +66,7 @@ inglés para el video. Los textos de la convocatoria y las 10 slides están en
 inglés en [docs/hackathon-submission.md](docs/hackathon-submission.md) y
 [docs/slides.md](docs/slides.md).
 
-> “Vendí tres pollos a veinticinco soles cada uno, me pagaron por Yape. Gasté quince en pasaje y me saqué veinte para el almuerzo.”
+> “Vendí tres polos a veinticinco soles cada uno, me pagaron por Yape. Gasté quince en pasaje y me saqué veinte para el almuerzo.”
 
 Wari registra tres movimientos y, al cerrar, lee ventas `S/ 75`, gastos `S/ 15`, retiros `S/ 20` y caja `S/ 40`. Vendió 75 y le quedan 40: esa resta es el producto. El dashboard muestra cada entrada y la transcripción que la originó.
 

@@ -25,7 +25,7 @@ Duración: menos de 3 minutos. Todo se hace desde el navegador, sin llamar a nin
    un clic con un libro vacío propio.)
 3. Toca **Hablar con Wari** y di, en un solo tirón:
 
-   > “Vendí tres pollos a veinticinco soles cada uno, me pagaron por Yape. Gasté quince en pasaje y me saqué veinte para el almuerzo.”
+   > “Vendí tres polos a veinticinco soles cada uno, me pagaron por Yape. Gasté quince en pasaje y me saqué veinte para el almuerzo.”
 
 4. Mientras hablas, el orbe de Wari se mueve con tu voz y con la suya, y debajo
    dice qué está haciendo: *Escuchándote… · Pensando… · Anotando en tu libro…*.
@@ -60,7 +60,7 @@ encima, en el orden en que pasan las cosas.
 | Crea la cuenta | Sign up, and the ledger is open. No setup. |
 | Panel en cero | Sold − Spent − Took out for herself = Left in the till |
 | Toca el botón | One button. No menus. |
-| Empieza a hablar | “I sold three chickens at twenty-five soles each, paid by Yape.” |
+| Empieza a hablar | “I sold three T-shirts at twenty-five soles each, paid by Yape.” |
 | Sigue | “I spent fifteen on the bus.” |
 | El retiro | “And I took out twenty for my lunch.” |
 | Aparece lo que dice Wari | Both sides of the conversation, on screen. |

@@ -41,7 +41,7 @@ own lunch.
 **RIMPILOT is a voice agent that asks.**
 
 You press one button in the browser and talk the way you would to a friend:
-*"vendí tres pollos a veinticinco soles cada uno, me pagaron por Yape, gasté
+*"vendí tres polos a veinticinco soles cada uno, me pagaron por Yape, gasté
 quince en pasaje y me saqué veinte para el almuerzo."* Wari — the agent — files
 three separate entries while you are still speaking, and before hanging up asks
 the question nobody asks themselves: *did you take anything out of the till for
