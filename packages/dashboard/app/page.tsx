@@ -15,10 +15,15 @@ import { mensajeDeError, textos } from "../lib/textos";
  * los textos de los dos idiomas viven en `lib/textos.ts`.
  */
 export function generateMetadata() {
-  const { landing } = textos(idiomaActual());
+  const { landing, meta } = textos(idiomaActual());
   return {
     title: { absolute: landing.metaTitulo },
     description: landing.metaDescripcion,
+    // La tarjeta que se ve al compartir el enlace dice lo mismo que la portada.
+    // Next reemplaza estos bloques enteros, no los mezcla con los del layout:
+    // por eso se repiten acá el tipo, el sitio y la imagen grande.
+    openGraph: { type: "website", siteName: "RIMPILOT", locale: meta.locale, title: landing.metaTitulo, description: landing.metaDescripcion },
+    twitter: { card: "summary_large_image", title: landing.metaTitulo, description: landing.metaDescripcion },
     robots: { index: true, follow: true },
   };
 }

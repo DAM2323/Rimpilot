@@ -7,8 +7,10 @@
  *
  * Gana la elección explícita (la cookie que deja el selector ES/EN). Si no hay,
  * se mira el idioma del navegador: quien lo tiene en español ve español, quien
- * lo tiene en cualquier otro idioma ve inglés. Sin ninguna pista —un bot, un
- * `curl`— se queda en español, que es el idioma del producto.
+ * lo tiene en cualquier otro idioma ve inglés. Sin ninguna pista —un bot, la
+ * vista previa de un enlace en lablab o en un chat— sale en inglés: esa vista
+ * previa es lo primero que ve un jurado, y ningún navegador de una persona
+ * llega sin `Accept-Language`.
  *
  * Este archivo no importa nada de Next para poder probarlo solo.
  */
@@ -39,7 +41,7 @@ function idiomaDelNavegador(cabecera: string | null | undefined): Idioma | null 
 
 export function idiomaDe(cookie: string | null | undefined, acceptLanguage: string | null | undefined): Idioma {
   if (esIdioma(cookie)) return cookie;
-  return idiomaDelNavegador(acceptLanguage) ?? "es";
+  return idiomaDelNavegador(acceptLanguage) ?? "en";
 }
 
 /**
