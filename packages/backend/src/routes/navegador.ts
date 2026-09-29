@@ -5,6 +5,7 @@ import { z } from "zod";
 import { textoDeFrame } from "../agent/rawData.js";
 import { FORMATO_NAVEGADOR, VoiceAgentBridge } from "../agent/voiceAgent.js";
 import { crearStreamToken, verificarStreamToken } from "../agent/streamToken.js";
+import type { Idioma } from "../agent/systemPrompt.js";
 import { sesionesActivas, tomarCupo, type Rechazo } from "../agent/cupo.js";
 import { consultarResumen } from "../services/libroContable.js";
 
@@ -23,20 +24,48 @@ const LARGO_MINIMO_CLAVE = 32;
 /** Si el primer mensaje no trae el token, la sesión no llega a abrirse. */
 const MS_PARA_AUTENTICAR = 5000;
 
-/** Regla 8: todo lo que manda el navegador pasa por este esquema. */
+/**
+ * Regla 8: todo lo que manda el navegador pasa por este esquema.
+ *
+ * `idioma` viaja sin firmar a propósito: solo decide en qué idioma habla Wari,
+ * no de quién es el libro ni cuánto se gasta. Lo que no sea `es` o `en` se
+ * rechaza igual, y si falta la sesión es en español.
+ */
 const mensajeNavegadorSchema = z.discriminatedUnion("tipo", [
-  z.object({ tipo: z.literal("iniciar"), token: z.string().min(1).max(512) }),
+  z.object({ tipo: z.literal("iniciar"), token: z.string().min(1).max(512), idioma: z.enum(["es", "en"]).optional() }),
   z.object({ tipo: z.literal("audio"), audio: z.string().min(1).max(65_536) }),
   z.object({ tipo: z.literal("fin") }),
 ]);
 
 const tokenBodySchema = z.object({ vendedorId: z.string().uuid() });
 
-/** Lo que ve la persona según qué tope se alcanzó. Ninguno es un error suyo. */
-const MENSAJE_RECHAZO: Record<Rechazo, string> = {
-  simultaneas: "Hay demasiadas conversaciones abiertas ahora. Prueba en un momento.",
-  diaria_vendedor: "Ya hablaste mucho con Wari hoy. Mañana puedes seguir.",
-  diaria_total: "Wari atendió todo lo que podía por hoy. Prueba mañana.",
+/** Lo que ve la persona en el panel, en su idioma. Ningún rechazo es un error suyo. */
+const MENSAJES: Record<Idioma, {
+  rechazo: Record<Rechazo, string>;
+  vencida: string;
+  limite: (minutos: string) => string;
+  desconectado: string;
+}> = {
+  es: {
+    rechazo: {
+      simultaneas: "Hay demasiadas conversaciones abiertas ahora. Prueba en un momento.",
+      diaria_vendedor: "Ya hablaste mucho hoy. Mañana puedes seguir.",
+      diaria_total: "RIMPILOT atendió todo lo que podía por hoy. Prueba mañana.",
+    },
+    vencida: "Sesión vencida. Recarga la página y vuelve a intentarlo.",
+    limite: (mensaje) => `${mensaje} Toca Empezar a hablar para seguir.`,
+    desconectado: "Se cortó la voz. Vuelve a intentarlo en un momento.",
+  },
+  en: {
+    rechazo: {
+      simultaneas: "There are too many conversations open right now. Try again in a moment.",
+      diaria_vendedor: "You've talked a lot today. You can continue tomorrow.",
+      diaria_total: "RIMPILOT has handled all it can for today. Try again tomorrow.",
+    },
+    vencida: "Session expired. Reload the page and try again.",
+    limite: () => "The session reached its time limit. Tap Start talking to continue.",
+    desconectado: "The voice disconnected. Try again in a moment.",
+  },
 };
 
 function claveInterna(): string | null {
@@ -140,25 +169,28 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
 
       if (mensaje.data.tipo === "iniciar") {
         if (agent) return;
+        const idioma: Idioma = mensaje.data.idioma ?? "es";
+        const textos = MENSAJES[idioma];
         const verificado = verificarStreamToken(mensaje.data.token);
         if (!verificado) {
           request.log.warn("Sesión de navegador rechazada: token ausente, inválido o vencido");
-          send({ tipo: "error", mensaje: "Sesión vencida. Recarga la página y vuelve a intentarlo." });
+          send({ tipo: "error", mensaje: textos.vencida });
           socket.close();
           return;
         }
         const cupo = tomarCupo(verificado);
         if ("rechazo" in cupo) {
           request.log.warn({ rechazo: cupo.rechazo, activas: sesionesActivas() }, "Sesión de navegador rechazada por tope");
-          send({ tipo: "error", mensaje: MENSAJE_RECHAZO[cupo.rechazo] });
+          send({ tipo: "error", mensaje: textos.rechazo[cupo.rechazo] });
           socket.close();
           return;
         }
         clearTimeout(plazo);
         vendedorId = verificado;
         liberarCupo = cupo.liberar;
+        request.log.info({ idioma }, "Sesión de voz del navegador abierta");
 
-        agent = new VoiceAgentBridge({ vendedorId, formato: FORMATO_NAVEGADOR }, {
+        agent = new VoiceAgentBridge({ vendedorId, formato: FORMATO_NAVEGADOR, idioma }, {
           onReady: () => send({ tipo: "listo" }),
           onAudio: (audio) => send({ tipo: "audio", audio }),
           onBargeIn: () => send({ tipo: "limpiar" }),
@@ -212,14 +244,14 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
           },
           onLimite: (mensajeLimite) => {
             request.log.info({ mensaje: mensajeLimite }, "Sesión de voz cerrada por duración máxima");
-            send({ tipo: "error", mensaje: `${mensajeLimite} Toca Hablar con Wari para seguir.` });
+            send({ tipo: "error", mensaje: textos.limite(mensajeLimite) });
             cerrar();
             socket.close();
           },
           onFatal: (mensajeError) => {
             // Regla 20: mensaje real, nunca un micrófono abierto contra la nada.
             request.log.error({ mensaje: mensajeError }, "Sesión de voz caída: se cierra el canal del navegador");
-            send({ tipo: "error", mensaje: "Wari se desconectó. Vuelve a intentarlo en un momento." });
+            send({ tipo: "error", mensaje: textos.desconectado });
             cerrar();
             socket.close();
           },

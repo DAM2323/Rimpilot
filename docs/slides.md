@@ -65,31 +65,31 @@ for the number the whole ledger depends on.
 
 ---
 
-## 5 — Meet Wari
+## 5 — Just talk
 
-> One button. Plain Spanish. No menus.
+> One button. Plain Spanish or English. No menus.
 >
-> *"Vendí tres pollos a veinticinco soles cada uno, me pagaron por Yape,
+> *"Vendí tres polos a veinticinco soles cada uno, me pagaron por Yape,
 > gasté quince en pasaje y me saqué veinte para el almuerzo."*
 >
 > → three separate entries, filed while she is still talking
 
-**Say:** Wari is the agent. She talks the way she would to a friend — one
-sentence, three different kinds of movement, no keywords, no order. Wari files
-them separately without interrupting her.
+**Say:** The vendor talks the way she would to a friend — one sentence, three
+different kinds of movement, no keywords, no order. RIMPILOT files them
+separately without interrupting her.
 
 ---
 
 ## 6 — The question nobody asks themselves
 
-> Before hanging up, Wari asks once:
+> Before hanging up, RIMPILOT asks once:
 >
 > # "¿Sacaste algo de la caja para ti hoy?"
 > *Did you take anything out of the till for yourself today?*
 
 **Say:** This single question is the product. Three movement types exist — a sale,
 a business expense, and a personal withdrawal — and the third one is the one no
-system has ever bothered to capture. Wari asks it once, does not nag, and moves on.
+system has ever bothered to capture. RIMPILOT asks it once, does not nag, and moves on.
 
 ---
 

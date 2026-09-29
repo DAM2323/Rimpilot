@@ -57,6 +57,7 @@ responde "No pudimos crear la cuenta". Se puede correr más de una vez sin daño
      gasta de la clave de AssemblyAI.
 
    Opcional: `ASSEMBLYAI_VOZ` en el backend para otra voz. Vacía usa `lola`.
+   `ASSEMBLYAI_VOZ_EN` hace lo mismo para Wari en inglés; vacía usa `jane`.
    Solo acepta nombres del [catálogo](https://www.assemblyai.com/docs/voice-agents/voice-agent-api/voices).
 
 El primer build tarda unos minutos por servicio.

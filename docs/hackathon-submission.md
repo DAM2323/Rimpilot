@@ -1,8 +1,10 @@
 # RIMPILOT — hackathon submission copy
 
-Everything a judge reads, in English. The product itself stays in Spanish: it is
-built for vendors in Peru, and translating the interface would break the thing
-being demonstrated. The demo video is spoken in Spanish with English subtitles.
+Everything a judge reads, in English. The product is built for Spanish-speaking
+vendors in Peru, and it also runs fully in English so anyone can try it: the site
+opens in English for browsers not set to Spanish (ES / EN switch at the top), and
+in English mode RIMPILOT listens and answers in English with an English voice.
+Amounts stay in soles. The demo video is spoken in Spanish with English subtitles.
 
 Amounts are in Peruvian soles (`S/`). Roughly: `S/ 75 ≈ US$ 20`.
 
@@ -22,7 +24,7 @@ RIMPILOT finds out by listening.
 ## Short description (under 300 characters)
 
 A voice agent that keeps books for informal vendors in Peru. You talk — from the
-browser or a phone call — and Wari writes down what you sold, what you spent, and
+browser or a phone call — and RIMPILOT writes down what you sold, what you spent, and
 what you took out of the till for yourself. That last one is why your cash never
 matches your sales.
 
@@ -39,8 +41,8 @@ own lunch.
 **RIMPILOT is a voice agent that asks.**
 
 You press one button in the browser and talk the way you would to a friend:
-*"vendí tres pollos a veinticinco soles cada uno, me pagaron por Yape, gasté
-quince en pasaje y me saqué veinte para el almuerzo."* Wari — the agent — files
+*"vendí tres polos a veinticinco soles cada uno, me pagaron por Yape, gasté
+quince en pasaje y me saqué veinte para el almuerzo."* RIMPILOT files
 three separate entries while you are still speaking, and before hanging up asks
 the question nobody asks themselves: *did you take anything out of the till for
 yourself today?*
@@ -77,9 +79,10 @@ the backend calculated.
 
 ## Tech stack
 
-- **AssemblyAI Voice Agent API** — Spanish speech, turn detection, barge-in, and
-  four tools: record sale, record expense, record personal withdrawal, read the
-  daily summary.
+- **AssemblyAI Voice Agent API** — Spanish or English speech (the session's
+  language, prompt and voice follow the language the person picked), turn
+  detection, barge-in, and four tools: record sale, record expense, record
+  personal withdrawal, read the daily summary.
 - **Two audio channels, one bridge.** The browser microphone sends PCM16 at
   24 kHz; Twilio sends G.711 μ-law at 8 kHz. Neither is re-encoded — the session
   is configured with the codec each channel already speaks.

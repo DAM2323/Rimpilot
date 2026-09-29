@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { z } from "zod";
-import { WARI_GREETING, WARI_SYSTEM_PROMPT } from "./systemPrompt.js";
+import { promptDeWari, type Idioma } from "./systemPrompt.js";
 import { gastoSchema, resumenSchema, retiroSchema, ventaSchema, herramientas } from "./tools.js";
 import { textoDeFrame } from "./rawData.js";
 import { registrarMovimiento, resumenParaCierre } from "../services/libroContable.js";
@@ -66,6 +66,13 @@ type Voz = (typeof VOCES_DOCUMENTADAS)[number];
  */
 const VOZ_POR_DEFECTO: Voz = "lola";
 
+/**
+ * Para las sesiones en inglés, una voz de acento estadounidense del mismo
+ * catálogo. Se cambia con `ASSEMBLYAI_VOZ_EN`, igual que la española: cuál
+ * suena mejor se decide oyéndola.
+ */
+const VOZ_POR_DEFECTO_EN: Voz = "jane";
+
 /** Falla al arrancar, no en medio de una llamada que además se paga. */
 function vozValida(voz: string): Voz {
   if (!(VOCES_DOCUMENTADAS as readonly string[]).includes(voz)) {
@@ -76,9 +83,10 @@ function vozValida(voz: string): Voz {
   return voz as Voz;
 }
 
-export function vozElegida(): Voz {
-  const pedida = process.env.ASSEMBLYAI_VOZ?.trim().toLowerCase();
-  return pedida ? vozValida(pedida) : VOZ_POR_DEFECTO;
+export function vozElegida(idioma: Idioma = "es"): Voz {
+  const variable = idioma === "en" ? process.env.ASSEMBLYAI_VOZ_EN : process.env.ASSEMBLYAI_VOZ;
+  const pedida = variable?.trim().toLowerCase();
+  return pedida ? vozValida(pedida) : idioma === "en" ? VOZ_POR_DEFECTO_EN : VOZ_POR_DEFECTO;
 }
 
 /**
@@ -88,8 +96,17 @@ export function vozElegida(): Voz {
  */
 export type EstadoVoz = "oyendo" | "pensando" | "hablando" | "escuchando" | "anotando" | "revisando";
 
-/** Lo que el puente necesita saber de la sesión, sea teléfono o navegador. */
-export type ContextoSesion = Omit<ToolContext, "getTranscript"> & { formato: FormatoAudio };
+/**
+ * Lo que el puente necesita saber de la sesión, sea teléfono o navegador. Sin
+ * `idioma` la sesión es en español: el teléfono no lo manda.
+ */
+export type ContextoSesion = Omit<ToolContext, "getTranscript"> & { formato: FormatoAudio; idioma?: Idioma };
+
+/** Palabras que conviene reforzar en la transcripción, según el idioma. */
+const TERMINOS_CLAVE: Record<Idioma, string[]> = {
+  es: ["Yape", "Plin", "retiro", "caja", "RIMPILOT"],
+  en: ["Yape", "Plin", "soles", "till", "RIMPILOT"],
+};
 
 const agentEventSchema = z.object({
   type: z.string(),
@@ -258,22 +275,24 @@ export class VoiceAgentBridge {
   }
 
   private configure(): void {
+    const idioma = this.context.idioma ?? "es";
+    const { prompt, saludo } = promptDeWari(idioma);
     this.send({
       type: "session.update",
       session: {
-        system_prompt: WARI_SYSTEM_PROMPT,
-        greeting: WARI_GREETING,
+        system_prompt: prompt,
+        greeting: saludo,
         tools: herramientas,
         // `type: "audio"` va en los dos: sin él la API ignora el bloque y
         // vuelve a su voz por defecto, que es inglesa y femenina.
         input: {
           type: "audio",
           format: this.context.formato,
-          language_codes: ["es"],
-          keyterms: ["Yape", "Plin", "retiro", "caja", "RIMPILOT"],
+          language_codes: [idioma],
+          keyterms: TERMINOS_CLAVE[idioma],
           turn_detection: { min_silence: 800, max_silence: 2200, interrupt_response: true },
         },
-        output: { type: "audio", voice: vozElegida(), format: this.context.formato },
+        output: { type: "audio", voice: vozElegida(idioma), format: this.context.formato },
       },
     });
   }
@@ -361,7 +380,7 @@ export class VoiceAgentBridge {
     if (name === "registrar_venta") {
       const args = ventaSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
-        tipo: "venta", descripcion: args.descripcion ?? "Venta", monto: args.monto, contraparte: args.contraparte,
+        tipo: "venta", descripcion: args.descripcion ?? (this.context.idioma === "en" ? "Sale" : "Venta"), monto: args.monto, contraparte: args.contraparte,
         metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
@@ -369,7 +388,7 @@ export class VoiceAgentBridge {
     if (name === "registrar_gasto") {
       const args = gastoSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
-        tipo: "gasto", descripcion: args.descripcion ?? "Gasto", monto: args.monto, metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
+        tipo: "gasto", descripcion: args.descripcion ?? (this.context.idioma === "en" ? "Expense" : "Gasto"), monto: args.monto, metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
     }
@@ -377,14 +396,14 @@ export class VoiceAgentBridge {
       const args = retiroSchema.parse(rawArguments);
       const result = await registrarMovimiento(this.context.vendedorId, {
         // Un retiro no tiene contraparte: la plata se la lleva el propio vendedor.
-        tipo: "retiro", descripcion: args.motivo?.trim() || "Retiro personal", monto: args.monto,
+        tipo: "retiro", descripcion: args.motivo?.trim() || (this.context.idioma === "en" ? "Personal withdrawal" : "Retiro personal"), monto: args.monto,
         metodoPago: args.metodo_pago ?? "efectivo", callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
       });
       return { ok: true, movimientoId: result.id };
     }
     if (name === "consultar_resumen_del_dia") {
       const args = resumenSchema.parse(rawArguments);
-      const summary = await resumenParaCierre(this.context.vendedorId, args.fecha);
+      const summary = await resumenParaCierre(this.context.vendedorId, args.fecha, this.context.idioma ?? "es");
       return { ok: true, ...summary };
     }
     throw new Error(`Herramienta desconocida: ${name}`);

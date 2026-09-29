@@ -24,6 +24,11 @@ describe("argumentos que manda el modelo", () => {
     assert.equal(ventaSchema.parse({ monto: 5, metodo_pago: "tarjeta" }).metodo_pago, undefined);
   });
 
+  it("en una sesión en inglés entiende cash y transfer", () => {
+    assert.equal(ventaSchema.parse({ monto: 5, metodo_pago: "Cash" }).metodo_pago, "efectivo");
+    assert.equal(ventaSchema.parse({ monto: 5, metodo_pago: "bank transfer" }).metodo_pago, "transferencia");
+  });
+
   it("un retiro solo necesita el monto", () => {
     assert.deepEqual(retiroSchema.parse({ monto: 20 }), { monto: 20 });
   });

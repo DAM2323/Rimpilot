@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Mic, Square } from "lucide-react";
+import type { Idioma } from "../lib/idioma";
+import { textos } from "../lib/textos";
 
 /**
  * Canal de voz por micrófono del navegador.
@@ -28,22 +30,6 @@ type Estado = "inactivo" | "conectando" | "escuchando";
  */
 type Fase = "escuchando" | "oyendo" | "pensando" | "hablando" | "anotando" | "revisando";
 const FASES: readonly Fase[] = ["escuchando", "oyendo", "pensando", "hablando", "anotando", "revisando"];
-
-const ETIQUETA_FASE: Record<Fase, string> = {
-  escuchando: "Te escucho",
-  oyendo: "Escuchándote…",
-  pensando: "Pensando…",
-  hablando: "Wari está hablando",
-  anotando: "Anotando en tu libro…",
-  revisando: "Revisando tu caja…",
-};
-
-/** Frases de ejemplo para la conversación vacía: enseñan sin instrucciones. */
-const EJEMPLOS = [
-  "Vendí tres pollos a veinticinco soles, me pagaron por Yape.",
-  "Gasté quince en pasaje.",
-  "Me saqué veinte para el almuerzo.",
-];
 
 /**
  * Un turno de la conversación. Antes el panel mostraba solo la última frase de
@@ -110,7 +96,13 @@ function volumen(medidor: AnalyserNode, muestras: Float32Array<ArrayBuffer>): nu
   return Math.min(1, Math.sqrt(Math.sqrt(suma / muestras.length)) * 1.6);
 }
 
-export function MicrofonoWari() {
+/**
+ * `idioma` decide los textos y también en qué idioma habla Wari: viaja al
+ * backend en el mensaje `iniciar`. Las frases de ejemplo de la conversación
+ * vacía enseñan sin instrucciones, en el idioma de la persona.
+ */
+export function MicrofonoWari({ idioma }: { idioma: Idioma }) {
+  const t = textos(idioma).wari;
   const router = useRouter();
   const [estado, setEstado] = useState<Estado>("inactivo");
   const [fase, setFase] = useState<Fase>("escuchando");
@@ -239,7 +231,7 @@ export function MicrofonoWari() {
 
     const wsUrl = process.env.NEXT_PUBLIC_BACKEND_WS_URL;
     if (!wsUrl) {
-      setError("Falta NEXT_PUBLIC_BACKEND_WS_URL en packages/dashboard/.env.local.");
+      setError(t.faltaWs);
       setEstado("inactivo");
       return;
     }
@@ -252,7 +244,7 @@ export function MicrofonoWari() {
         audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
     } catch {
-      setError("No pudimos usar el micrófono. Dale permiso al navegador y vuelve a intentarlo.");
+      setError(t.sinMicrofono);
       setEstado("inactivo");
       return;
     }
@@ -261,11 +253,11 @@ export function MicrofonoWari() {
     try {
       const respuesta = await fetch("/api/voz/token", { method: "POST", cache: "no-store" });
       const datos = (await respuesta.json()) as { token?: string; error?: string };
-      if (!respuesta.ok || !datos.token) throw new Error(datos.error ?? "Sesión rechazada.");
+      if (!respuesta.ok || !datos.token) throw new Error(datos.error ?? t.rechazada);
       token = datos.token;
     } catch (fallo) {
       for (const canal of pista.getTracks()) canal.stop();
-      setError(fallo instanceof Error ? fallo.message : "No pudimos abrir la sesión de voz.");
+      setError(fallo instanceof Error ? fallo.message : t.sinSesion);
       setEstado("inactivo");
       return;
     }
@@ -284,7 +276,7 @@ export function MicrofonoWari() {
     sesion.current = activa;
 
     socket.onopen = () => {
-      socket.send(JSON.stringify({ tipo: "iniciar", token }));
+      socket.send(JSON.stringify({ tipo: "iniciar", token, idioma }));
       void conectarCaptura(activa, contexto.createMediaStreamSource(pista));
     };
 
@@ -329,17 +321,17 @@ export function MicrofonoWari() {
         const id = siguienteId.current;
         setTurnos((previos) => [...previos, { id, quien: "wari" as const, texto, final: true }].slice(-TURNOS_VISIBLES));
       } else if (mensaje.tipo === "aviso" || mensaje.tipo === "error") {
-        setError(mensaje.mensaje ?? "La sesión de voz falló.");
+        setError(mensaje.mensaje ?? t.fallo);
       }
     };
 
-    socket.onerror = () => setError("Se cortó la conexión con Wari.");
+    socket.onerror = () => setError(t.cortada);
     socket.onclose = () => { if (sesion.current === activa) terminar(); };
-  }, [animarOrbe, conectarCaptura, reproducir, router, terminar]);
+  }, [animarOrbe, conectarCaptura, idioma, reproducir, router, t, terminar]);
 
   const ocupado = estado === "conectando";
   const activo = estado === "escuchando" || ocupado;
-  const etiqueta = estado === "escuchando" ? ETIQUETA_FASE[fase] : ocupado ? "Conectando…" : "Micrófono apagado";
+  const etiqueta = estado === "escuchando" ? t.fases[fase] : ocupado ? t.conectando : t.apagado;
 
   return <section className="panel-wari" aria-labelledby="wari-titulo">
     <div className="wari-control">
@@ -350,11 +342,11 @@ export function MicrofonoWari() {
         <span className="orbe-nucleo" />
       </div>
       <div className="wari-texto">
-        <h2 id="wari-titulo">Cuéntale tu día a Wari</h2>
+        <h2 id="wari-titulo">{t.titulo}</h2>
         <p className="wari-fase" role="status">{etiqueta}</p>
         <button type="button" className={`mic-button${activo ? " activa" : ""}`} onClick={activo ? terminar : () => void empezar()} aria-busy={ocupado}>
           {ocupado ? <Loader2 size={18} aria-hidden="true"/> : activo ? <Square size={16} aria-hidden="true"/> : <Mic size={18} aria-hidden="true"/>}
-          {ocupado ? "Conectando…" : activo ? "Terminar" : "Hablar con Wari"}
+          {ocupado ? t.conectando : activo ? t.terminar : t.hablar}
         </button>
         {error && <p className="mic-error" role="alert">{error}</p>}
       </div>
@@ -363,18 +355,22 @@ export function MicrofonoWari() {
     {turnos.length > 0 ? (
       // role="log": un lector de pantalla anuncia cada frase nueva sin repetir
       // toda la conversación.
-      <ol className="conversacion" role="log" aria-live="polite" aria-label="Conversación con Wari">
-        {turnos.map((turno) => (
-          <li key={turno.id} className={`burbuja ${turno.quien}`}>
-            <span className="burbuja-quien">{turno.quien === "wari" ? "Wari" : "Tú"}</span>
-            <span className="burbuja-texto">{turno.texto}</span>
-          </li>
-        ))}
-      </ol>
+      // El `log` va en un envoltorio y no en la lista: puesto en el <ol> le
+      // quita la semántica de lista y cada <li> queda huérfano (axe: listitem).
+      <div role="log" aria-live="polite" aria-label={t.conversacion}>
+        <ol className="conversacion">
+          {turnos.map((turno) => (
+            <li key={turno.id} className={`burbuja ${turno.quien}`}>
+              <span className="burbuja-quien">{turno.quien === "wari" ? "RIMPILOT" : t.tu}</span>
+              <span className="burbuja-texto">{turno.texto}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
     ) : (
       <div className="conversacion-vacia">
-        <p>Habla como hablas. Por ejemplo:</p>
-        <ul>{EJEMPLOS.map((ejemplo) => <li key={ejemplo}>«{ejemplo}»</li>)}</ul>
+        <p>{t.vacio}</p>
+        <ul>{t.ejemplos.map((ejemplo) => <li key={ejemplo}>{idioma === "en" ? `“${ejemplo}”` : `«${ejemplo}»`}</li>)}</ul>
       </div>
     )}
   </section>;

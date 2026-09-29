@@ -52,11 +52,13 @@ export async function consultarResumen(vendedorId: string, fecha?: string): Prom
 export async function resumenParaCierre(
   vendedorId: string,
   fecha?: string,
+  idioma: "es" | "en" = "es",
 ): Promise<ResumenDelDia & { semana: ProporcionRetiros | null }> {
   const dia = fecha ?? fechaLima();
   const [resumen, semana] = await Promise.all([
     recalcularResumen(vendedorId, dia),
-    proporcionDeRetiros(vendedorId, dia),
+    // La frase va en el idioma de la sesión: Wari la lee tal cual.
+    proporcionDeRetiros(vendedorId, dia, idioma),
   ]);
   return { ...resumen, semana };
 }

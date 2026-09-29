@@ -1,4 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Idioma } from "./idioma";
+import { textos } from "./textos";
 import type { Movimiento, PuntoFlujo, Resumen, TipoMovimiento } from "./types";
 
 /**
@@ -31,11 +33,12 @@ export function fechaLima(date = new Date()): string {
  * corre en UTC y a las cinco de la tarde en Lima ya son las diez de la noche.
  * Antes decía "Buenos días" siempre.
  */
-export function saludoLima(date = new Date()): string {
+export function saludoLima(date = new Date(), idioma: Idioma = "es"): string {
   const hora = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Lima", hour: "numeric", hourCycle: "h23" }).format(date));
-  if (hora >= 5 && hora < 12) return "Buenos días";
-  if (hora >= 12 && hora < 19) return "Buenas tardes";
-  return "Buenas noches";
+  const { saludo } = textos(idioma).libro;
+  if (hora >= 5 && hora < 12) return saludo.manana;
+  if (hora >= 12 && hora < 19) return saludo.tarde;
+  return saludo.noche;
 }
 
 function siguienteFecha(fecha: string): string {

@@ -51,6 +51,15 @@ p { text-wrap: pretty; }
 .salir { padding: 0 18px; color: var(--muted); font-size: .875rem; }
 .landing-cta-suave:hover, .salir:hover { border-color: var(--cyan); color: var(--ink); }
 
+/* ES / EN. Dos segmentos en una sola píldora: el elegido se marca con relleno y
+   con texto claro, no solo con color, y el otro queda en gris legible. */
+.selector-idioma { display: inline-flex; flex: none; padding: 3px; gap: 2px; border: 1px solid var(--line-strong); border-radius: 999px; }
+.selector-idioma a { min-width: 40px; min-height: 36px; display: inline-grid; place-items: center; padding: 0 10px; border-radius: 999px; color: var(--muted); font-size: .8125rem; font-weight: 700; letter-spacing: .04em; text-decoration: none; transition: color 180ms var(--salida), background-color 180ms var(--salida); }
+.selector-idioma a:hover { color: var(--ink); }
+.selector-idioma a[aria-current="true"] { background: var(--surface-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.topbar-derecha { display: flex; align-items: center; gap: 10px; flex: none; }
+.puerta > .selector-idioma { position: absolute; top: 20px; right: 20px; }
+
 /* ======================================================= ORBE DE WARI ===
    La cara de Wari. `--nivel` (0 a 1) lo escribe el componente con el volumen
    real de la voz, cuadro a cuadro. `data-fase` dice qué está haciendo y
@@ -261,12 +270,14 @@ p { text-wrap: pretty; }
 .landing-entrar:hover { border-color: var(--cyan); }
 
 .landing-hero { margin-top: clamp(40px, 7vw, 88px); display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(32px, 6vw, 80px); align-items: center; }
-.landing-hero h1 { margin: 0; font-size: clamp(2.5rem, 5.8vw, 4.25rem); font-weight: 800; line-height: 1.02; letter-spacing: -.04em; }
+.landing-hero h1 { margin: 0; font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.02; letter-spacing: -.04em; }
 .landing-hero h1 span { color: var(--cyan); }
-.landing-bajada { margin: 22px 0 0; max-width: 34ch; color: var(--muted); font-size: clamp(1.0625rem, 1.8vw, 1.25rem); line-height: 1.5; }
-.landing-remate { margin: 26px 0 0; display: flex; align-items: center; gap: 14px; font-weight: 650; }
-.landing-remate em { color: var(--muted); font-style: normal; }
-.landing-regla { width: 64px; height: 4px; flex: none; border-radius: 2px; background: var(--grad); }
+/* Qué hace, dicho en dos líneas justo debajo del título: sin esto la portada
+   era una frase bonita que no explicaba el producto. */
+.landing-explicacion { margin: 22px 0 0; max-width: 40ch; color: var(--muted); font-size: clamp(1.0625rem, 1.8vw, 1.1875rem); line-height: 1.55; }
+.landing-puntos { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 10px; }
+.landing-puntos li { display: flex; align-items: flex-start; gap: 10px; font-weight: 600; line-height: 1.4; }
+.landing-puntos svg { flex: none; margin-top: 1px; color: var(--cyan); }
 .landing-acciones { margin-top: 32px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .landing-letra-chica { margin: 14px 0 0; color: var(--muted); font-size: .8125rem; }
 .landing-error { margin: 24px 0 0; max-width: 46ch; padding: 11px 14px; color: var(--rose); background: var(--rose-soft); border: 1px solid var(--rose); border-radius: 10px; font-size: .875rem; }
@@ -344,6 +355,14 @@ p { text-wrap: pretty; }
   .topbar-marca { width: 44px; height: 44px; }
   .topbar-izquierda { gap: 12px; }
   .topbar h1 { font-size: 1.25rem; }
+  /* En el teléfono el saludo manda: el selector y Salir suben a su propia
+     fila, arriba a la derecha, y el saludo usa todo el ancho. En la misma fila
+     "Terminar prueba" partía "Buenas noches" en dos. Siguen por encima de 24 px. */
+  .topbar { flex-wrap: wrap; row-gap: 14px; }
+  .topbar-derecha { order: -1; width: 100%; justify-content: flex-end; gap: 6px; }
+  .topbar-derecha .selector-idioma { padding: 2px; }
+  .topbar-derecha .selector-idioma a { min-width: 32px; min-height: 32px; padding: 0 6px; font-size: .75rem; }
+  .topbar-derecha .salir { padding: 0 12px; min-height: 36px; font-size: .8125rem; }
   .panel-wari { padding: 18px; gap: 20px; }
   .orbe { width: 84px; height: 84px; }
   .burbuja { max-width: 94%; }

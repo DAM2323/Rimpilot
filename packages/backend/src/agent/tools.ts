@@ -74,9 +74,18 @@ export const herramientas = [
  */
 const METODOS = ["efectivo", "yape", "plin", "transferencia"] as const;
 
+/**
+ * En las sesiones en inglés el modelo dice "cash" aunque el esquema pida
+ * "efectivo". Es el mismo método: se traduce en vez de perderlo.
+ */
+const SINONIMOS: Record<string, (typeof METODOS)[number]> = {
+  cash: "efectivo", "bank transfer": "transferencia", transfer: "transferencia", "wire transfer": "transferencia",
+};
+
 const metodoPago = z.preprocess((valor) => {
   if (typeof valor !== "string") return undefined;
-  const limpio = valor.trim().toLowerCase();
+  const bruto = valor.trim().toLowerCase();
+  const limpio = SINONIMOS[bruto] ?? bruto;
   // Un método que no conocemos queda sin especificar, no tumba el movimiento.
   return (METODOS as readonly string[]).includes(limpio) ? limpio : undefined;
 }, z.enum(METODOS).optional());

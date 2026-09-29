@@ -13,17 +13,19 @@ import type { PuntoFlujo } from "./types";
  * tocá la otra. Están separadas porque el panel lee por PostgREST y el backend
  * por PostgreSQL directo, igual que pasa con `fechaLima`.
  */
-export function fraseProporcion(ventas: number, retiros: number): string | null {
+export function fraseProporcion(ventas: number, retiros: number, idioma: "es" | "en" = "es"): string | null {
   if (ventas <= 0 || retiros <= 0) return null;
   const porcentaje = Math.round((retiros / ventas) * 100);
-  if (porcentaje > 50) return "más de la mitad de lo que vendiste";
+  const ingles = idioma === "en";
+  if (porcentaje > 50) return ingles ? "more than half of what you sold" : "más de la mitad de lo que vendiste";
   // Redondeado: "1 de cada 3" se lee de un vistazo, "el 30,7 %" no.
-  return `1 de cada ${Math.round(ventas / retiros)} soles que vendiste`;
+  const cada = Math.round(ventas / retiros);
+  return ingles ? `1 in every ${cada} soles you sold` : `1 de cada ${cada} soles que vendiste`;
 }
 
 /** La frase de los siete días que ya muestra el gráfico, o `null` si no hay qué decir. */
-export function fraseDeLaSemana(puntos: PuntoFlujo[]): string | null {
+export function fraseDeLaSemana(puntos: PuntoFlujo[], idioma: "es" | "en" = "es"): string | null {
   const ventas = puntos.reduce((total, punto) => total + punto.ventas, 0);
   const retiros = puntos.reduce((total, punto) => total + punto.retiros, 0);
-  return fraseProporcion(ventas, retiros);
+  return fraseProporcion(ventas, retiros, idioma);
 }

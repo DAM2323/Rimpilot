@@ -1,6 +1,9 @@
 import { ArrowDownRight, ArrowUpRight, HandCoins, WalletCards } from "lucide-react";
+import type { Idioma } from "../lib/idioma";
+import { textos } from "../lib/textos";
 import type { Resumen } from "../lib/types";
 
+/** En soles y con formato peruano en los dos idiomas: la plata es en soles. */
 const money = new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN", minimumFractionDigits: 0 });
 
 /**
@@ -14,19 +17,20 @@ const money = new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN
  * Los signos son texto, no adorno: un lector de pantalla lee la cuenta en orden
  * ("menos", "igual"), y quien no distingue el rosa del violeta la lee igual.
  */
-export function ResumenDelDia({ resumen, fraseSemana }: { resumen: Resumen; fraseSemana?: string | null }) {
+export function ResumenDelDia({ resumen, fraseSemana, idioma }: { resumen: Resumen; fraseSemana?: string | null; idioma: Idioma }) {
+  const t = textos(idioma).cuenta;
   const terminos = [
-    { signo: null, rotulo: "Vendiste", valor: resumen.totalVentas, icono: ArrowUpRight, tono: "venta" },
-    { signo: "−", rotulo: "Gastaste en el negocio", valor: resumen.totalGastos, icono: ArrowDownRight, tono: "gasto" },
-    { signo: "−", rotulo: "Sacaste para ti", valor: resumen.totalRetiros, icono: HandCoins, tono: "retiro" },
+    { signo: null, rotulo: t.vendiste, valor: resumen.totalVentas, icono: ArrowUpRight, tono: "venta" },
+    { signo: "−", rotulo: t.gastaste, valor: resumen.totalGastos, icono: ArrowDownRight, tono: "gasto" },
+    { signo: "−", rotulo: t.sacaste, valor: resumen.totalRetiros, icono: HandCoins, tono: "retiro" },
   ] as const;
 
   return <section className="cuenta" aria-labelledby="cuenta-titulo">
-    <h2 id="cuenta-titulo" className="cuenta-titulo">La cuenta de hoy</h2>
+    <h2 id="cuenta-titulo" className="cuenta-titulo">{t.titulo}</h2>
     <div className="cuenta-fila">
       {terminos.map(({ signo, rotulo, valor, icono: Icono, tono }) => (
-        <div className={`cuenta-termino ${tono}`} key={rotulo}>
-          {signo && <span className="cuenta-signo"><span aria-hidden="true">{signo}</span><span className="solo-lector">menos</span></span>}
+        <div className={`cuenta-termino ${tono}`} key={tono}>
+          {signo && <span className="cuenta-signo"><span aria-hidden="true">{signo}</span><span className="solo-lector">{t.menos}</span></span>}
           <div>
             <p className="cuenta-rotulo"><Icono aria-hidden="true" size={15} />{rotulo}</p>
             <p className="cuenta-monto">{money.format(valor)}</p>
@@ -34,13 +38,13 @@ export function ResumenDelDia({ resumen, fraseSemana }: { resumen: Resumen; fras
         </div>
       ))}
       <div className="cuenta-termino resultado">
-        <span className="cuenta-signo"><span aria-hidden="true">=</span><span className="solo-lector">igual a</span></span>
+        <span className="cuenta-signo"><span aria-hidden="true">=</span><span className="solo-lector">{t.igual}</span></span>
         <div>
-          <p className="cuenta-rotulo"><WalletCards aria-hidden="true" size={15} />Te queda en caja</p>
+          <p className="cuenta-rotulo"><WalletCards aria-hidden="true" size={15} />{t.queda}</p>
           <p className="cuenta-monto">{money.format(resumen.saldoDelDia)}</p>
         </div>
       </div>
     </div>
-    {fraseSemana && <p className="cuenta-semana">Esta semana sacaste para ti <strong>{fraseSemana}</strong>.</p>}
+    {fraseSemana && <p className="cuenta-semana">{t.semana}<strong>{fraseSemana}</strong>.</p>}
   </section>;
 }
