@@ -75,11 +75,38 @@ harder to scan than any colour choice.
 
 ## Components
 
-Slim navy navigation rail on desktop with the gradient mark at the top; compact
-header on mobile. Surfaces separate with 1px `--line` borders over `--surface`;
-no drop shadows — on a dark ground, elevation comes from the surface step, not from
-shade. Motion is limited to 180ms state feedback, loading uses skeletons, and every
-state works without hover.
+**Anything that looks like a control is one.** An earlier version had a navigation
+rail with three bars that led nowhere, a "Wari está listo" pill that said ready with
+the microphone off, and a settings icon that did nothing. All gone: the mark sits in
+the header and links home, and the microphone's real state lives in its panel.
+
+Surfaces separate with 1px `--line` borders over `--surface`; no drop shadows — on a
+dark ground, elevation comes from the surface step, not from shade. No card sits
+inside another card. No coloured side-stripe borders: states are carried by
+background, alignment and written labels.
+
+- **The day's account** is written as the subtraction it is — *Vendiste − Gastaste
+  − Sacaste para ti = Te queda en caja* — with the signs as text (and hidden
+  "menos" / "igual a" for screen readers), not four identical metric tiles.
+- **The conversation** reads like a chat: the person on the right on a cyan tint,
+  Wari on the left, each bubble labelled with who is speaking.
+- **Wari's orb** is the one animated element. It is driven by the real audio level
+  (an `AnalyserNode` on Wari's voice and on the microphone, written to a CSS
+  variable once per frame, never through React state) and by the real session
+  state from the backend: *Te escucho · Escuchándote · Pensando · Wari está
+  hablando · Anotando en tu libro · Revisando tu caja*. Violet halo when Wari
+  speaks, cyan when the person does.
+- Headlines are solid colour. The gradient appears three times on the landing and
+  never carries text: the mark, the orb, one rule.
+
+Motion is 180ms state feedback with an exponential ease-out, plus the orb. Under
+`prefers-reduced-motion` everything is still and the audio loop never starts.
+
+## Voice
+
+The product speaks the way Peru speaks: **tú**, never *vos*. "Cuéntale tu día",
+"Toca", "Crea tu cuenta". Wari's prompt already used tú; an earlier interface used
+voseo, so the screen and the voice disagreed.
 
 ## The logo
 

@@ -3,20 +3,44 @@ import type { Resumen } from "../lib/types";
 
 const money = new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN", minimumFractionDigits: 0 });
 
-export function ResumenDelDia({ resumen, proporcion }: { resumen: Resumen; proporcion?: string | null }) {
-  // El orden cuenta la resta: ventas − gastos − retiros = caja. La caja va
-  // última porque es el resultado, no un rubro más.
-  const items = [
-    { label: "Ventas de hoy", value: resumen.totalVentas, icon: ArrowUpRight, tone: "income", nota: null },
-    { label: "Gastos de hoy", value: resumen.totalGastos, icon: ArrowDownRight, tone: "expense", nota: null },
-    { label: "Sacaste para ti", value: resumen.totalRetiros, icon: HandCoins, tone: "retiro", nota: proporcion ?? null },
-    { label: "Caja disponible", value: resumen.saldoDelDia, icon: WalletCards, tone: "balance", nota: null },
-  ];
-  return <section className="summary-grid" aria-label="Resumen del día">
-    {items.map(({ label, value, icon: Icon, tone, nota }) => <article className={`summary-item ${tone}`} key={label}>
-      <div className="summary-icon"><Icon aria-hidden="true" size={18} /></div>
-      <p>{label}</p><strong>{money.format(value)}</strong>
-      {nota && <small>{nota}</small>}
-    </article>)}
+/**
+ * La cuenta del día escrita como lo que es: una resta.
+ *
+ * Antes eran cuatro tarjetas iguales —ícono, rótulo, número— y la relación
+ * entre los números había que adivinarla. Pero el producto entero es esa
+ * relación: vendiste 75, te quedan 40, y la diferencia tiene nombre. Así que se
+ * escribe con sus signos: ventas − gastos − lo que sacaste = lo que te queda.
+ *
+ * Los signos son texto, no adorno: un lector de pantalla lee la cuenta en orden
+ * ("menos", "igual"), y quien no distingue el rosa del violeta la lee igual.
+ */
+export function ResumenDelDia({ resumen, fraseSemana }: { resumen: Resumen; fraseSemana?: string | null }) {
+  const terminos = [
+    { signo: null, rotulo: "Vendiste", valor: resumen.totalVentas, icono: ArrowUpRight, tono: "venta" },
+    { signo: "−", rotulo: "Gastaste en el negocio", valor: resumen.totalGastos, icono: ArrowDownRight, tono: "gasto" },
+    { signo: "−", rotulo: "Sacaste para ti", valor: resumen.totalRetiros, icono: HandCoins, tono: "retiro" },
+  ] as const;
+
+  return <section className="cuenta" aria-labelledby="cuenta-titulo">
+    <h2 id="cuenta-titulo" className="cuenta-titulo">La cuenta de hoy</h2>
+    <div className="cuenta-fila">
+      {terminos.map(({ signo, rotulo, valor, icono: Icono, tono }) => (
+        <div className={`cuenta-termino ${tono}`} key={rotulo}>
+          {signo && <span className="cuenta-signo"><span aria-hidden="true">{signo}</span><span className="solo-lector">menos</span></span>}
+          <div>
+            <p className="cuenta-rotulo"><Icono aria-hidden="true" size={15} />{rotulo}</p>
+            <p className="cuenta-monto">{money.format(valor)}</p>
+          </div>
+        </div>
+      ))}
+      <div className="cuenta-termino resultado">
+        <span className="cuenta-signo"><span aria-hidden="true">=</span><span className="solo-lector">igual a</span></span>
+        <div>
+          <p className="cuenta-rotulo"><WalletCards aria-hidden="true" size={15} />Te queda en caja</p>
+          <p className="cuenta-monto">{money.format(resumen.saldoDelDia)}</p>
+        </div>
+      </div>
+    </div>
+    {fraseSemana && <p className="cuenta-semana">Esta semana sacaste para ti <strong>{fraseSemana}</strong>.</p>}
   </section>;
 }

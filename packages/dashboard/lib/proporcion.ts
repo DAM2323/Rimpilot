@@ -21,9 +21,9 @@ export function fraseProporcion(ventas: number, retiros: number): string | null 
   return `1 de cada ${Math.round(ventas / retiros)} soles que vendiste`;
 }
 
-export function proporcionDeLaSemana(puntos: PuntoFlujo[]): string | null {
+/** La frase de los siete días que ya muestra el gráfico, o `null` si no hay qué decir. */
+export function fraseDeLaSemana(puntos: PuntoFlujo[]): string | null {
   const ventas = puntos.reduce((total, punto) => total + punto.ventas, 0);
   const retiros = puntos.reduce((total, punto) => total + punto.retiros, 0);
-  const frase = fraseProporcion(ventas, retiros);
-  return frase ? `${frase}, esta semana` : null;
+  return fraseProporcion(ventas, retiros);
 }

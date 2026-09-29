@@ -14,7 +14,7 @@ export default async function MovimientoPage({ params }: { params: { id: string 
     <article className="detail-card"><div className="detail-top"><span className={`type-pill ${movimiento.tipo}`}>{labels[movimiento.tipo]}</span><time>{new Intl.DateTimeFormat("es-PE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Lima" }).format(new Date(movimiento.creado_en))}</time></div>
       <div className="detail-amount"><ReceiptText aria-hidden="true" size={23}/><div><p>{movimiento.descripcion}</p><strong>{money.format(movimiento.monto)}</strong></div></div>
       <dl className="detail-meta"><div><dt>Método de pago</dt><dd>{movimiento.metodo_pago ?? "No especificado"}</dd></div>{movimiento.contraparte && <div><dt>Contraparte</dt><dd>{movimiento.contraparte}</dd></div>}</dl>
-      <section className="audit"><div className="audit-heading"><FileAudio size={19} aria-hidden="true"/><div><h2>Origen de este registro</h2><p>Lo que Wari te escuchó decir.</p></div></div><blockquote>“{movimiento.transcripcion ?? "No se guardó una transcripción para este movimiento."}”</blockquote></section>
+      <section className="audit"><div className="audit-heading"><FileAudio size={19} aria-hidden="true"/><div><h2>Origen de este registro</h2><p>Lo que Wari te escuchó decir.</p></div></div><blockquote>{movimiento.transcripcion ?? "No se guardó una transcripción para este movimiento."}</blockquote></section>
     </article>
   </main>;
 }

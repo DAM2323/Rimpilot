@@ -11,7 +11,7 @@ export default function Entrar({ searchParams }: { searchParams: { error?: strin
     </Link>
 
     <section className="puerta-tarjeta">
-      <h1>Entrá a tu libro</h1>
+      <h1>Entra a tu libro</h1>
       <p className="puerta-bajada">Tu caja, como la dejaste.</p>
 
       {searchParams.error && <p className="puerta-error" role="alert">{searchParams.error}</p>}
@@ -30,9 +30,9 @@ export default function Entrar({ searchParams }: { searchParams: { error?: strin
       </form>
 
       <p className="puerta-pie">
-        ¿Todavía no tenés libro?{" "}
+        ¿Todavía no tienes libro?{" "}
         <Link href={searchParams.volver ? `/crear-cuenta?volver=${encodeURIComponent(searchParams.volver)}` : "/crear-cuenta"}>
-          Creá tu cuenta
+          Crea tu cuenta
         </Link>
       </p>
     </section>
