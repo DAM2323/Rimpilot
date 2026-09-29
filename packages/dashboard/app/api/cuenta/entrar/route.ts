@@ -8,7 +8,7 @@ export async function POST(request: Request): Promise<Response> {
   const origen = new URL(request.url).origin;
   // Más estricto que el registro: acá es donde se prueban contraseñas.
   if (!permitir(`entrar:${quien(request)}`, 8)) {
-    return aError(origen, "/entrar", "Demasiados intentos. Espera unos minutos.");
+    return aError(origen, "/entrar", "intentos");
   }
 
   const formulario = await request.formData();
@@ -17,9 +17,9 @@ export async function POST(request: Request): Promise<Response> {
     email: formulario.get("email"),
     clave: formulario.get("clave"),
   });
-  if (!datos.success) return aError(origen, "/entrar", "Correo o contraseña incorrectos.", volver as string | null);
+  if (!datos.success) return aError(origen, "/entrar", "credenciales", volver as string | null);
 
   const resultado = await entrar(datos.data);
-  if (!resultado.ok) return aError(origen, "/entrar", resultado.mensaje, volver as string | null);
+  if (!resultado.ok) return aError(origen, "/entrar", resultado.codigo, volver as string | null);
   return entrarAlLibro(origen, resultado.vendedorId, volver);
 }

@@ -12,6 +12,7 @@ RIMPILOT fue creado desde cero para el AssemblyAI Voice Agent Hackathon 2026. El
 - Llamada entrante por Twilio Media Streams, para el vendedor que no tiene datos en ese momento.
 - Un solo puente de voz para los dos canales: G.711 μ-law (`audio/pcmu`) para el teléfono y PCM16 a 24 kHz (`audio/pcm`) para el navegador, sin recodificar audio en ninguno de los dos.
 - Wari, agente conversacional en español con cuatro herramientas: venta, gasto, **retiro personal** y resumen diario. Antes de cerrar pregunta una vez «¿sacaste algo de la caja para ti hoy?», porque es lo que nadie anota.
+- **Dos idiomas.** La portada y el libro se abren en el idioma del navegador —español para quien lo tiene en español, inglés para el resto— y se cambian con el selector ES / EN. En inglés Wari también escucha y contesta en inglés, con otra voz. Los montos siguen en soles. Los textos viven en [`lib/textos.ts`](packages/dashboard/lib/textos.ts), y una prueba falla si falta alguno en inglés.
 - La proporción de la semana: cuánto de lo vendido se llevó la persona, en los últimos 7 días. La calcula el código y Wari la lee tal cual; es un hecho sobre su propia plata, no un consejo.
 - PostgreSQL/Supabase con trazabilidad: cada movimiento conserva el fragmento de transcripción que lo originó.
 - Dashboard Next.js responsive con resumen de caja, filtros, detalle auditable, gráfico de 7 días y actualización automática sin recargar.
@@ -166,6 +167,7 @@ pnpm build
 | `RIMPILOT_ORIGENES_PERMITIDOS` | Orígenes que pueden abrir el WebSocket del navegador, separados por coma. Vacío = solo `localhost`. |
 | `ASSEMBLYAI_VOICE_URL` | Opcional. Solo para apuntar a un mock en pruebas; vacío usa la API real. |
 | `ASSEMBLYAI_VOZ` | Opcional. La voz de Wari; vacío usa `lola`, la única del catálogo con acento nativo en español. Solo se aceptan nombres del [catálogo](https://www.assemblyai.com/docs/voice-agents/voice-agent-api/voices): uno inventado no arranca el backend, porque la API lo ignora en silencio y habla en inglés. |
+| `ASSEMBLYAI_VOZ_EN` | Opcional. La voz de Wari cuando el panel está en inglés; vacío usa `jane`, de acento estadounidense. Mismo catálogo y misma validación. |
 | `SEED_VENDOR_TELEFONO`, `SEED_VENDOR_NOMBRE`, `SEED_VENDOR_NEGOCIO` | Vendedor del canal telefónico para `pnpm --filter @rimpilot/backend seed`. El teléfono es obligatorio; nombre y negocio quedan en `NULL` si no los das. Quien entra por la web no lo necesita. |
 | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Van en `packages/dashboard/.env.local`. La key nunca se expone al navegador. |
 | `RIMPILOT_SESSION_SECRET` | Firma la cookie de sesión del panel, en `packages/dashboard/.env.local`. Mínimo 32 caracteres y obligatoria: sin ella el libro devuelve 503 y nadie entra. |

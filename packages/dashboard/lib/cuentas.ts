@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import type { CodigoError } from "./textos";
 
 /**
  * Crear y verificar cuentas. Corre solo en el servidor: usa la clave de
@@ -10,15 +11,19 @@ import { z } from "zod";
 /** Regla 10: costo real, no el mínimo que la librería acepte. */
 const COSTO_BCRYPT = 12;
 
+/**
+ * Los mensajes para la persona no viven acá: la ruta mira qué campo falló y
+ * manda un código, que la página traduce al idioma de quien la mira.
+ */
 export const registroSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Ese correo no parece válido."),
-  clave: z.string().min(8, "La contraseña necesita al menos 8 caracteres.").max(200),
+  email: z.string().trim().toLowerCase().email(),
+  clave: z.string().min(8).max(200),
   nombre: z.string().trim().min(1).max(80).optional(),
   negocio: z.string().trim().min(1).max(80).optional(),
 });
 
 export const entradaSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Ese correo no parece válido."),
+  email: z.string().trim().toLowerCase().email(),
   clave: z.string().min(1).max(200),
 });
 
@@ -31,12 +36,12 @@ function db(): SupabaseClient {
   return createClient(url, serviceRole, { auth: { persistSession: false } });
 }
 
-export type Resultado = { ok: true; vendedorId: string } | { ok: false; mensaje: string };
+export type Resultado = { ok: true; vendedorId: string } | { ok: false; codigo: CodigoError };
 
 export async function registrar(datos: z.infer<typeof registroSchema>): Promise<Resultado> {
   const cliente = db();
   const { data: existente } = await cliente.from("vendedores").select("id").eq("email", datos.email).maybeSingle();
-  if (existente) return { ok: false, mensaje: "Ya hay una cuenta con ese correo. Prueba entrando." };
+  if (existente) return { ok: false, codigo: "correo_existe" };
 
   const { data, error } = await cliente.from("vendedores").insert({
     email: datos.email,
@@ -49,7 +54,7 @@ export async function registrar(datos: z.infer<typeof registroSchema>): Promise<
     // Al vendedor se le da un mensaje parejo; el motivo real queda en el log del
     // servidor. Sin esto, un fallo de base es indistinguible de uno de red.
     console.error("registro: no se pudo crear el vendedor", error);
-    return { ok: false, mensaje: "No pudimos crear la cuenta. Prueba de nuevo." };
+    return { ok: false, codigo: "no_se_pudo_crear" };
   }
   return { ok: true, vendedorId: data.id as string };
 }
@@ -67,7 +72,7 @@ export async function entrar(datos: z.infer<typeof entradaSchema>): Promise<Resu
   const coincide = await bcrypt.compare(datos.clave, hash);
 
   // Un solo mensaje para los dos casos: no confirmamos qué correos existen.
-  if (!data || !coincide) return { ok: false, mensaje: "Correo o contraseña incorrectos." };
+  if (!data || !coincide) return { ok: false, codigo: "credenciales" };
   return { ok: true, vendedorId: data.id as string };
 }
 
@@ -83,7 +88,7 @@ export async function crearInvitado(): Promise<Resultado> {
 
   if (error || !data) {
     console.error("invitado: no se pudo crear el libro de prueba", error);
-    return { ok: false, mensaje: "No pudimos abrir el libro de prueba. Prueba de nuevo." };
+    return { ok: false, codigo: "no_se_pudo_invitado" };
   }
   return { ok: true, vendedorId: data.id as string };
 }

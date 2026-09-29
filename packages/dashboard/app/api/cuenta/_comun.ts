@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 import { COOKIE_SESION, crearSesion, opcionesCookie } from "../../../lib/sesion";
+import type { CodigoError } from "../../../lib/textos";
 
 /**
  * Las cuatro rutas de cuenta responden con una redirección, no con JSON: los
  * formularios son HTML puro y andan sin una línea de JavaScript, que es lo que
  * conviene cuando la CSP prohíbe scripts inline y el vendedor puede estar en un
  * teléfono con mala señal.
+ *
+ * El error viaja como código, no como frase: la página lo muestra en el idioma
+ * de quien la mira, y un texto inventado en `?error=` no se muestra nunca.
  */
-export function aError(origen: string, ruta: string, mensaje: string, volver?: string | null): NextResponse {
+export function aError(origen: string, ruta: string, codigo: CodigoError, volver?: string | null): NextResponse {
   const url = new URL(ruta, origen);
-  url.searchParams.set("error", mensaje);
+  url.searchParams.set("error", codigo);
   // Si venía de un enlace profundo, no se pierde al fallar el primer intento.
   if (volver) url.searchParams.set("volver", volver);
   return NextResponse.redirect(url, { status: 303 });

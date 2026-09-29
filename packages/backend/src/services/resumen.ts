@@ -36,12 +36,14 @@ export const DIAS_DE_VENTANA = 7;
  * denominador, y sin retiros no hay nada que contar. Un 0% el primer día no le
  * dice nada a nadie.
  */
-export function fraseProporcion(ventas: number, retiros: number): string | null {
+export function fraseProporcion(ventas: number, retiros: number, idioma: "es" | "en" = "es"): string | null {
   if (ventas <= 0 || retiros <= 0) return null;
   const porcentaje = Math.round((retiros / ventas) * 100);
-  if (porcentaje > 50) return "más de la mitad de lo que vendiste";
+  const ingles = idioma === "en";
+  if (porcentaje > 50) return ingles ? "more than half of what you sold" : "más de la mitad de lo que vendiste";
   // Redondeado: "1 de cada 3" se entiende hablado, "el 30,7 %" no.
-  return `1 de cada ${Math.round(ventas / retiros)} soles que vendiste`;
+  const cada = Math.round(ventas / retiros);
+  return ingles ? `1 in every ${cada} soles you sold` : `1 de cada ${cada} soles que vendiste`;
 }
 
 export function fechaLima(date = new Date()): string {
@@ -55,7 +57,11 @@ export function fechaLima(date = new Date()): string {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-export async function proporcionDeRetiros(vendedorId: string, hasta = fechaLima()): Promise<ProporcionRetiros | null> {
+export async function proporcionDeRetiros(
+  vendedorId: string,
+  hasta = fechaLima(),
+  idioma: "es" | "en" = "es",
+): Promise<ProporcionRetiros | null> {
   const [totales] = await sql()<{ ventas: string; retiros: string }[]>`
     SELECT
       COALESCE(SUM(monto) FILTER (WHERE tipo = 'venta'), 0)::text AS ventas,
@@ -68,7 +74,7 @@ export async function proporcionDeRetiros(vendedorId: string, hasta = fechaLima(
 
   const ventas = Number(totales.ventas);
   const retiros = Number(totales.retiros);
-  const frase = fraseProporcion(ventas, retiros);
+  const frase = fraseProporcion(ventas, retiros, idioma);
   if (!frase) return null;
   return { dias: DIAS_DE_VENTANA, ventas, retiros, porcentaje: Math.round((retiros / ventas) * 100), frase };
 }

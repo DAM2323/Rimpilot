@@ -1,8 +1,10 @@
 # RIMPILOT — hackathon submission copy
 
-Everything a judge reads, in English. The product itself stays in Spanish: it is
-built for vendors in Peru, and translating the interface would break the thing
-being demonstrated. The demo video is spoken in Spanish with English subtitles.
+Everything a judge reads, in English. The product is built for Spanish-speaking
+vendors in Peru, and it also runs fully in English so anyone can try it: the site
+opens in English for browsers not set to Spanish (ES / EN switch at the top), and
+in English mode Wari listens and answers in English with an English voice.
+Amounts stay in soles. The demo video is spoken in Spanish with English subtitles.
 
 Amounts are in Peruvian soles (`S/`). Roughly: `S/ 75 ≈ US$ 20`.
 
@@ -77,9 +79,10 @@ the backend calculated.
 
 ## Tech stack
 
-- **AssemblyAI Voice Agent API** — Spanish speech, turn detection, barge-in, and
-  four tools: record sale, record expense, record personal withdrawal, read the
-  daily summary.
+- **AssemblyAI Voice Agent API** — Spanish or English speech (the session's
+  language, prompt and voice follow the language the person picked), turn
+  detection, barge-in, and four tools: record sale, record expense, record
+  personal withdrawal, read the daily summary.
 - **Two audio channels, one bridge.** The browser microphone sends PCM16 at
   24 kHz; Twilio sends G.711 μ-law at 8 kHz. Neither is re-encoded — the session
   is configured with the codec each channel already speaks.

@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export async function POST(request: Request): Promise<Response> {
   const origen = new URL(request.url).origin;
   if (!permitir(`registro:${quien(request)}`, 10)) {
-    return aError(origen, "/crear-cuenta", "Demasiados intentos. Espera unos minutos.");
+    return aError(origen, "/crear-cuenta", "intentos");
   }
 
   const formulario = await request.formData();
@@ -20,10 +20,13 @@ export async function POST(request: Request): Promise<Response> {
     negocio: formulario.get("negocio") || undefined,
   });
   if (!datos.success) {
-    return aError(origen, "/crear-cuenta", datos.error.issues[0]?.message ?? "Revisa los datos.", volver as string | null);
+    // El primer campo que falló dice qué mensaje mostrar.
+    const campo = datos.error.issues[0]?.path[0];
+    const codigo = campo === "email" ? "correo_invalido" : campo === "clave" ? "clave_corta" : "datos";
+    return aError(origen, "/crear-cuenta", codigo, volver as string | null);
   }
 
   const resultado = await registrar(datos.data);
-  if (!resultado.ok) return aError(origen, "/crear-cuenta", resultado.mensaje, volver as string | null);
+  if (!resultado.ok) return aError(origen, "/crear-cuenta", resultado.codigo, volver as string | null);
   return entrarAlLibro(origen, resultado.vendedorId, volver);
 }

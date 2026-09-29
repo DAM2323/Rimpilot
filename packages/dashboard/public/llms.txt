@@ -11,6 +11,11 @@ RIMPILOT no da consejo financiero, no evalúa crédito y no se conecta a bancos.
 - En la página principal se crea una cuenta con correo y contraseña, o se entra como invitado sin registrarse. Cada invitado recibe su propio libro vacío, aislado del de los demás.
 - En el libro se toca "Hablar con Wari" y se habla por el micrófono del navegador. También se puede llamar por teléfono (Twilio).
 - Lo que dice la persona y lo que responde Wari aparecen escritos en pantalla, y cada movimiento aparece en el libro sin recargar.
+- Está en español y en inglés. Se abre en el idioma del navegador y se cambia con el selector ES / EN; en inglés Wari también habla inglés. Los montos siempre en soles.
+
+## In English
+
+RIMPILOT is a voice bookkeeping app for informal street vendors in Peru. You tell Wari, the voice agent, what you sold, what you spent on the business and what you took out of the till for yourself, and it writes an auditable ledger. The site opens in English for browsers that are not set to Spanish, and Wari then listens and answers in English. Amounts are in Peruvian soles.
 
 ## Cómo funciona
 
