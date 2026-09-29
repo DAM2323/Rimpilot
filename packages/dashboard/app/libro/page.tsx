@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Filter, Mic, SlidersHorizontal } from "lucide-react";
+import { Filter } from "lucide-react";
 import marca from "../../public/logo-simbolo.png";
 import { GraficoFlujoCaja } from "../../components/GraficoFlujoCaja";
 import { ListaMovimientos } from "../../components/ListaMovimientos";
@@ -33,16 +33,28 @@ export default async function Dashboard({ searchParams }: { searchParams: { tipo
   const invitado = vendedor?.es_invitado ?? false;
   return <main className="app-shell antialiased">
     <LiveRefresh />
-    <aside className="sidebar"><Image className="brand-mark" src={marca} alt="RIMPILOT" width={44} height={35} priority/><div className="sidebar-line active"/><div className="sidebar-line"/><div className="sidebar-line"/></aside>
     <section className="workspace">
-      <header className="topbar"><div><p className="kicker">{fecha}</p><h1>{saludoLima()}, {nombre}</h1></div><div className="topbar-derecha"><div className="voice-status"><span className="pulse"/><Mic size={17} aria-hidden="true"/> Wari está listo</div><form method="post" action="/api/cuenta/salir"><button type="submit" className="salir">{invitado ? "Terminar prueba" : "Salir"}</button></form></div></header>
+      <header className="topbar">
+        {/*
+          Antes había una barra lateral con el logo y tres rayas que parecían un
+          menú y no llevaban a ningún lado, y un "Wari está listo" que decía
+          "listo" también con el micrófono apagado. Lo que parece un control
+          tiene que serlo: el logo ahora lleva a la portada y el estado real del
+          micrófono vive en su propio panel.
+        */}
+        <div className="topbar-izquierda">
+          <Link href="/" className="topbar-marca" aria-label="RIMPILOT, ir a la portada"><Image src={marca} alt="" width={40} height={32} priority/></Link>
+          <div><p className="kicker">{fecha}</p><h1>{invitado ? saludoLima() : `${saludoLima()}, ${nombre}`}</h1></div>
+        </div>
+        <form method="post" action="/api/cuenta/salir"><button type="submit" className="salir">{invitado ? "Terminar prueba" : "Salir"}</button></form>
+      </header>
       {invitado && <aside className="aviso-invitado" role="status"><strong>Estás probando RIMPILOT.</strong> Este libro es solo tuyo y nadie más lo ve, pero se pierde cuando cierres la sesión. <Link href="/crear-cuenta">Creá tu cuenta</Link> para conservarlo.</aside>}
       {!configured && <aside className="configuration-warning" role="status"><strong>Panel sin conectar.</strong> Configura las variables en <code>packages/dashboard/.env.local</code> para mostrar el libro real. No se muestran datos de demostración.</aside>}
-      <section className="intro"><div><h2>Tu caja, clara.</h2><p>Así se movió tu negocio hoy. Cada registro viene directo de tu voz.</p></div><span className="today">HOY</span></section>
+      <section className="intro"><div><h2>Tu caja, clara.</h2><p>Así se movió tu negocio hoy. Cada registro viene directo de tu voz.</p></div></section>
       <MicrofonoWari/>
       <ResumenDelDia resumen={resumen} proporcion={proporcionDeLaSemana(flujo)}/>
       <div className="content-grid">
-        <section className="ledger-section"><div className="section-heading"><div><h2>Movimientos</h2><p>{movimientos.length} registros encontrados</p></div><SlidersHorizontal aria-hidden="true" size={19}/></div>
+        <section className="ledger-section"><div className="section-heading"><div><h2>Movimientos</h2><p>{movimientos.length === 1 ? "1 registro" : `${movimientos.length} registros`}</p></div></div>
           <form className="filters"><Filter aria-hidden="true" size={16}/><label>Tipo<select name="tipo" defaultValue={searchParams.tipo ?? ""}><option value="">Todos</option>{types.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label><label>Desde<input name="desde" type="date" defaultValue={searchParams.desde}/></label><label>Hasta<input name="hasta" type="date" defaultValue={searchParams.hasta}/></label><button type="submit">Aplicar</button></form>
           <ListaMovimientos movimientos={movimientos}/>
         </section>
