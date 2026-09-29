@@ -270,7 +270,7 @@ p { text-wrap: pretty; }
 .landing-entrar:hover { border-color: var(--cyan); }
 
 .landing-hero { margin-top: clamp(40px, 7vw, 88px); display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(32px, 6vw, 80px); align-items: center; }
-.landing-hero h1 { margin: 0; font-size: clamp(2.5rem, 5.8vw, 4.25rem); font-weight: 800; line-height: 1.02; letter-spacing: -.04em; }
+.landing-hero h1 { margin: 0; font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.02; letter-spacing: -.04em; }
 .landing-hero h1 span { color: var(--cyan); }
 /* Qué hace, dicho en dos líneas justo debajo del título: sin esto la portada
    era una frase bonita que no explicaba el producto. */
