@@ -102,9 +102,10 @@ incluidas; lo único que cambia es quién necesita sesión.
 
 ## Desplegarlo
 
-El panel va a Vercel y el backend a Render: sostiene un WebSocket abierto toda
-la conversación, y una función serverless se corta antes. Los pasos, las
-variables y el aviso del plan gratuito están en
+Todo va a Render con un solo Blueprint ([render.yaml](render.yaml)): el panel y
+el backend de voz, que sostiene un WebSocket abierto toda la conversación y no
+puede vivir en una función serverless. Los pasos, las variables y el aviso del
+plan gratuito están en
 [docs/despliegue.md](docs/despliegue.md).
 
 ## Arquitectura
