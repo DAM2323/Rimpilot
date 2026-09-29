@@ -49,22 +49,22 @@ const MENSAJES: Record<Idioma, {
   es: {
     rechazo: {
       simultaneas: "Hay demasiadas conversaciones abiertas ahora. Prueba en un momento.",
-      diaria_vendedor: "Ya hablaste mucho con Wari hoy. Mañana puedes seguir.",
-      diaria_total: "Wari atendió todo lo que podía por hoy. Prueba mañana.",
+      diaria_vendedor: "Ya hablaste mucho hoy. Mañana puedes seguir.",
+      diaria_total: "RIMPILOT atendió todo lo que podía por hoy. Prueba mañana.",
     },
     vencida: "Sesión vencida. Recarga la página y vuelve a intentarlo.",
-    limite: (mensaje) => `${mensaje} Toca Hablar con Wari para seguir.`,
-    desconectado: "Wari se desconectó. Vuelve a intentarlo en un momento.",
+    limite: (mensaje) => `${mensaje} Toca Empezar a hablar para seguir.`,
+    desconectado: "Se cortó la voz. Vuelve a intentarlo en un momento.",
   },
   en: {
     rechazo: {
       simultaneas: "There are too many conversations open right now. Try again in a moment.",
-      diaria_vendedor: "You've talked with Wari a lot today. You can continue tomorrow.",
-      diaria_total: "Wari has handled all it can for today. Try again tomorrow.",
+      diaria_vendedor: "You've talked a lot today. You can continue tomorrow.",
+      diaria_total: "RIMPILOT has handled all it can for today. Try again tomorrow.",
     },
     vencida: "Session expired. Reload the page and try again.",
-    limite: () => "The session reached its time limit. Tap Talk to Wari to continue.",
-    desconectado: "Wari disconnected. Try again in a moment.",
+    limite: () => "The session reached its time limit. Tap Start talking to continue.",
+    desconectado: "The voice disconnected. Try again in a moment.",
   },
 };
 

@@ -361,7 +361,7 @@ export function MicrofonoWari({ idioma }: { idioma: Idioma }) {
         <ol className="conversacion">
           {turnos.map((turno) => (
             <li key={turno.id} className={`burbuja ${turno.quien}`}>
-              <span className="burbuja-quien">{turno.quien === "wari" ? "Wari" : t.tu}</span>
+              <span className="burbuja-quien">{turno.quien === "wari" ? "RIMPILOT" : t.tu}</span>
               <span className="burbuja-texto">{turno.texto}</span>
             </li>
           ))}

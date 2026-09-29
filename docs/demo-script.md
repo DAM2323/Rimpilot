@@ -10,7 +10,7 @@ Duración: menos de 3 minutos. Todo se hace desde el navegador, sin llamar a nin
 - No hace falta borrar nada: la cuenta que vas a crear en la demo nace en cero.
 - Probá el micrófono una vez antes de grabar: el navegador pide permiso la
   primera vez y esa pausa mata el ritmo del video.
-- Hablá con frases completas y, si Wari te pregunta algo, contestale. Cuando
+- Hablá con frases completas y, si RIMPILOT te pregunta algo, contestale. Cuando
   termines, decile «eso es todo por hoy» para que lea el resumen.
 
 ## La demo
@@ -23,16 +23,16 @@ Duración: menos de 3 minutos. Todo se hace desde el navegador, sin llamar a nin
    hoy**: *Vendiste − Gastaste − Sacaste para ti = Te queda en caja*.
    (Si prefieres no mostrar el formulario, **Probar sin registrarme** entra en
    un clic con un libro vacío propio.)
-3. Toca **Hablar con Wari** y di, en un solo tirón:
+3. Toca **Empezar a hablar** y di, en un solo tirón:
 
    > “Vendí tres polos a veinticinco soles cada uno, me pagaron por Yape. Gasté quince en pasaje y me saqué veinte para el almuerzo.”
 
-4. Mientras hablas, el orbe de Wari se mueve con tu voz y con la suya, y debajo
+4. Mientras hablas, el orbe de la voz se mueve con tu voz y con la suya, y debajo
    dice qué está haciendo: *Escuchándote… · Pensando… · Anotando en tu libro…*.
-   La conversación queda escrita como un chat, tú a la derecha y Wari a la
+   La conversación queda escrita como un chat, tú a la derecha y RIMPILOT a la
    izquierda. En el momento en que dice «Anotando», la fila aparece en el libro
    y la cuenta de arriba cambia sola, sin recargar.
-5. Dile «eso es todo por hoy». Wari cierra leyendo: ventas S/ 75, gastos S/ 15,
+5. Dile «eso es todo por hoy». RIMPILOT cierra leyendo: ventas S/ 75, gastos S/ 15,
    retiros S/ 20, **caja S/ 40**.
 
 ## El momento que importa
@@ -41,7 +41,7 @@ Vendiste S/ 75 pero en la caja hay S/ 40.
 
 Esa resta es todo el producto. El vendedor informal sabe cuánto vendió y no sabe por qué le falta plata al final del día; la respuesta casi siempre es la que nadie anota: se sacó algo para él. RIMPILOT no se lo explica ni se lo aconseja — se lo muestra con sus propios números.
 
-Si ya hay una semana cargada, Wari cierra con una línea más: «esta semana vendiste 270 y sacaste 83 para ti, 1 de cada 3 soles que vendiste». La misma frase está en el panel, debajo de la tarjeta de retiros. La calcula el código; Wari no opina sobre ella.
+Si ya hay una semana cargada, RIMPILOT cierra con una línea más: «esta semana vendiste 270 y sacaste 83 para ti, 1 de cada 3 soles que vendiste». La misma frase está en el panel, debajo de la tarjeta de retiros. La calcula el código; RIMPILOT no opina sobre ella.
 
 6. Abrí cualquier movimiento: se ve la frase exacta que dijo la persona y que originó ese registro. Nada de lo que hay en el libro salió de una suposición.
 
@@ -63,9 +63,9 @@ encima, en el orden en que pasan las cosas.
 | Empieza a hablar | “I sold three T-shirts at twenty-five soles each, paid by Yape.” |
 | Sigue | “I spent fifteen on the bus.” |
 | El retiro | “And I took out twenty for my lunch.” |
-| Aparece lo que dice Wari | Both sides of the conversation, on screen. |
+| Aparece lo que dice RIMPILOT | Both sides of the conversation, on screen. |
 | Aparecen las tarjetas | Three entries, filed while she is still talking |
-| Wari cierra | Sales 75 · Expenses 15 · Withdrawals 20 · **Cash 40** |
+| RIMPILOT cierra | Sales 75 · Expenses 15 · Withdrawals 20 · **Cash 40** |
 | Sostener el plano | She sold 75. She has 40. Now she knows why. |
 | Frase de la semana | “1 out of every 3 soles you sold.” Computed in code, not by the model. |
 | Abre un movimiento | Every entry keeps the exact words that produced it. |

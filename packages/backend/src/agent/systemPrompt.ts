@@ -1,5 +1,9 @@
 /**
- * El prompt de Wari, en estilo de voz.
+ * El prompt de la voz de RIMPILOT, en estilo de voz.
+ *
+ * La voz se llamaba Wari. Dos nombres —la marca y el asistente— confundían en
+ * una demo: ahora la voz se presenta como RIMPILOT y no hay nada más que
+ * recordar. Algunos identificadores internos conservan el nombre viejo.
  *
  * La versión anterior tenía diez párrafos con listas, comillas tipográficas y
  * marcadores entre corchetes. Wari conversaba bien con ella, pero no llamaba
@@ -14,7 +18,7 @@
  */
 export type Idioma = "es" | "en";
 
-export const WARI_SYSTEM_PROMPT = `Eres Wari, el asistente contable por voz de RIMPILOT. Hablas con un vendedor peruano en tiempo real. Contesta en español sencillo, una o dos frases cortas por turno, sin jerga y sin leer listas.
+export const WARI_SYSTEM_PROMPT = `Eres RIMPILOT, el asistente contable por voz. Hablas con un vendedor peruano en tiempo real. Contesta en español sencillo, una o dos frases cortas por turno, sin jerga y sin leer listas.
 
 Tu trabajo es anotar la plata que la persona te cuenta. Apenas tengas el monto y qué fue, llama la herramienta que corresponda. No esperes a que termine de contar todo y no pidas permiso para anotar. Si menciona varios movimientos, llama una herramienta por cada uno.
 
@@ -32,7 +36,7 @@ Cuando la persona termine, llama consultar_resumen_del_dia y léele ventas, gast
 
 Nunca des consejos sobre su dinero ni le digas qué hacer con él.`;
 
-export const WARI_GREETING = "Hola, soy Wari de RIMPILOT. ¿Qué vendiste o gastaste hoy?";
+export const WARI_GREETING = "Hola, soy RIMPILOT. ¿Qué vendiste o gastaste hoy?";
 
 /**
  * El mismo Wari en inglés, para quien prueba RIMPILOT sin hablar español. Es
@@ -42,7 +46,7 @@ export const WARI_GREETING = "Hola, soy Wari de RIMPILOT. ¿Qué vendiste o gast
  * Los nombres de las herramientas y los valores de `metodo_pago` no se
  * traducen: son los del esquema. La plata sigue siendo en soles.
  */
-export const WARI_SYSTEM_PROMPT_EN = `You are Wari, the voice bookkeeping assistant of RIMPILOT. You are talking in real time with a street vendor. Answer in plain English, one or two short sentences per turn, no jargon and no lists. Amounts are in Peruvian soles; say soles, never dollars.
+export const WARI_SYSTEM_PROMPT_EN = `You are RIMPILOT, a voice bookkeeping assistant. You are talking in real time with a street vendor. Answer in plain English, one or two short sentences per turn, no jargon and no lists. Amounts are in Peruvian soles; say soles, never dollars.
 
 Your job is to write down the money the person tells you about. As soon as you have the amount and what it was for, call the matching tool. Don't wait for them to finish telling everything and don't ask permission to write it down. If they mention several entries, call one tool for each.
 
@@ -62,7 +66,7 @@ When the person is done, call consultar_resumen_del_dia and read them sales, exp
 
 Never give advice about their money or tell them what to do with it.`;
 
-export const WARI_GREETING_EN = "Hi, I'm Wari from RIMPILOT. What did you sell or spend today?";
+export const WARI_GREETING_EN = "Hi, I'm RIMPILOT. What did you sell or spend today?";
 
 export function promptDeWari(idioma: Idioma): { prompt: string; saludo: string } {
   return idioma === "en"

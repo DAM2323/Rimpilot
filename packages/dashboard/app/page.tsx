@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import marca from "../public/logo.png";
 import { SelectorIdioma } from "../components/SelectorIdioma";
 import { idiomaActual } from "../lib/idiomaServidor";
@@ -59,7 +59,10 @@ export default function Landing({ searchParams }: { searchParams: { error?: stri
     <section className="landing-hero">
       <div className="landing-hero-texto">
         <h1>{t.titulo1}<br /><span>{t.titulo2}</span></h1>
-        <p className="landing-remate"><span className="landing-regla" aria-hidden="true" /><span>{t.remate} <em>{t.remateFuerte}</em></span></p>
+        <p className="landing-explicacion">{t.explicacion}</p>
+        <ul className="landing-puntos">
+          {t.puntos.map((punto) => <li key={punto}><Check size={18} aria-hidden="true" />{punto}</li>)}
+        </ul>
 
         {error && <p className="landing-error" role="alert">{error}</p>}
 
@@ -69,7 +72,7 @@ export default function Landing({ searchParams }: { searchParams: { error?: stri
       </div>
 
       {/*
-        El producto funcionando, no una ilustración: el orbe de Wari, un pedazo
+        El producto funcionando, no una ilustración: el orbe de la voz, un pedazo
         de conversación y la cuenta que sale de ella. Es la misma cuenta que
         muestra el libro de verdad.
       */}
@@ -80,7 +83,7 @@ export default function Landing({ searchParams }: { searchParams: { error?: stri
         </div>
         <ol className="conversacion">
           <li className="burbuja tu"><span className="burbuja-quien">{textos(idioma).wari.tu}</span><span className="burbuja-texto">{t.demoTu}</span></li>
-          <li className="burbuja wari"><span className="burbuja-quien">Wari</span><span className="burbuja-texto">{t.demoWari}</span></li>
+          <li className="burbuja wari"><span className="burbuja-quien">RIMPILOT</span><span className="burbuja-texto">{t.demoVoz}</span></li>
         </ol>
         <div className="cuenta cuenta-demo">
           <div className="cuenta-fila">

@@ -272,10 +272,12 @@ p { text-wrap: pretty; }
 .landing-hero { margin-top: clamp(40px, 7vw, 88px); display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(32px, 6vw, 80px); align-items: center; }
 .landing-hero h1 { margin: 0; font-size: clamp(2.5rem, 5.8vw, 4.25rem); font-weight: 800; line-height: 1.02; letter-spacing: -.04em; }
 .landing-hero h1 span { color: var(--cyan); }
-.landing-bajada { margin: 22px 0 0; max-width: 34ch; color: var(--muted); font-size: clamp(1.0625rem, 1.8vw, 1.25rem); line-height: 1.5; }
-.landing-remate { margin: 26px 0 0; display: flex; align-items: center; gap: 14px; font-weight: 650; }
-.landing-remate em { color: var(--muted); font-style: normal; }
-.landing-regla { width: 64px; height: 4px; flex: none; border-radius: 2px; background: var(--grad); }
+/* Qué hace, dicho en dos líneas justo debajo del título: sin esto la portada
+   era una frase bonita que no explicaba el producto. */
+.landing-explicacion { margin: 22px 0 0; max-width: 40ch; color: var(--muted); font-size: clamp(1.0625rem, 1.8vw, 1.1875rem); line-height: 1.55; }
+.landing-puntos { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 10px; }
+.landing-puntos li { display: flex; align-items: flex-start; gap: 10px; font-weight: 600; line-height: 1.4; }
+.landing-puntos svg { flex: none; margin-top: 1px; color: var(--cyan); }
 .landing-acciones { margin-top: 32px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .landing-letra-chica { margin: 14px 0 0; color: var(--muted); font-size: .8125rem; }
 .landing-error { margin: 24px 0 0; max-width: 46ch; padding: 11px 14px; color: var(--rose); background: var(--rose-soft); border: 1px solid var(--rose); border-radius: 10px; font-size: .875rem; }

@@ -21,10 +21,10 @@ export default function OpengraphImage() {
 
         <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
           <div style={{ fontSize: 78, color: "#F2F5FF", lineHeight: 1.04, fontWeight: 800, letterSpacing: -3 }}>
-            Tu caja, clara.
+            Cuéntale tu día.
           </div>
           <div style={{ fontSize: 30, color: "#9AABCE", marginTop: 20, lineHeight: 1.35 }}>
-            Contás tu día hablando. Wari arma el libro contable.
+            RIMPILOT lleva tus cuentas: ventas, gastos y lo que sacas para ti.
           </div>
           {/* Los cuatro números cuentan la resta: vendiste 75 y te quedan 40. */}
           <div style={{ display: "flex", gap: 30, marginTop: 40 }}>

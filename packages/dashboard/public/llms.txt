@@ -1,28 +1,28 @@
 # RIMPILOT
 
-> Contabilidad por voz para vendedores informales en Perú. La persona le cuenta a Wari, en lenguaje natural, lo que vendió, lo que gastó en el negocio y lo que sacó de la caja para ella, y RIMPILOT lo ordena en un libro contable auditable que se ve en un panel web.
+> Contabilidad por voz para vendedores informales en Perú. La persona le cuenta a RIMPILOT, en lenguaje natural, lo que vendió, lo que gastó en el negocio y lo que sacó de la caja para ella, y RIMPILOT lo ordena en un libro contable auditable que se ve en un panel web.
 
-El problema que resuelve cabe en una resta: el vendedor sabe que vendió S/ 75 y no sabe por qué en la caja hay S/ 40. Lo que falta casi siempre es plata que sacó para sí mismo durante el día y no anotó nadie. Por eso Wari, antes de cerrar, pregunta una vez: ¿sacaste algo de la caja para ti hoy?
+El problema que resuelve cabe en una resta: el vendedor sabe que vendió S/ 75 y no sabe por qué en la caja hay S/ 40. Lo que falta casi siempre es plata que sacó para sí mismo durante el día y no anotó nadie. Por eso RIMPILOT, antes de cerrar, pregunta una vez: ¿sacaste algo de la caja para ti hoy?
 
 RIMPILOT no da consejo financiero, no evalúa crédito y no se conecta a bancos.
 
 ## Cómo se usa
 
 - En la página principal se crea una cuenta con correo y contraseña, o se entra como invitado sin registrarse. Cada invitado recibe su propio libro vacío, aislado del de los demás.
-- En el libro se toca "Hablar con Wari" y se habla por el micrófono del navegador. También se puede llamar por teléfono (Twilio).
-- Lo que dice la persona y lo que responde Wari aparecen escritos en pantalla, y cada movimiento aparece en el libro sin recargar.
-- Está en español y en inglés. Se abre en el idioma del navegador y se cambia con el selector ES / EN; en inglés Wari también habla inglés. Los montos siempre en soles.
+- En el libro se toca "Empezar a hablar" y se habla por el micrófono del navegador. También se puede llamar por teléfono (Twilio).
+- Lo que dice la persona y lo que responde RIMPILOT aparecen escritos en pantalla, y cada movimiento aparece en el libro sin recargar.
+- Está en español y en inglés. Se abre en el idioma del navegador y se cambia con el selector ES / EN; en inglés RIMPILOT también habla inglés. Los montos siempre en soles.
 
 ## In English
 
-RIMPILOT is a voice bookkeeping app for informal street vendors in Peru. You tell Wari, the voice agent, what you sold, what you spent on the business and what you took out of the till for yourself, and it writes an auditable ledger. The site opens in English for browsers that are not set to Spanish, and Wari then listens and answers in English. Amounts are in Peruvian soles.
+RIMPILOT is a voice bookkeeping app for informal street vendors in Peru. You tell RIMPILOT, out loud, what you sold, what you spent on the business and what you took out of the till for yourself, and it writes an auditable ledger. The site opens in English for browsers that are not set to Spanish, and RIMPILOT then listens and answers in English. Amounts are in Peruvian soles.
 
 ## Cómo funciona
 
 - La voz es la Voice Agent API de AssemblyAI. El navegador no se conecta directo: el audio pasa por el backend, así la clave no sale del servidor y nadie puede escribir en el libro de otra persona.
-- Wari tiene cuatro herramientas: registrar venta, registrar gasto del negocio, registrar retiro personal y consultar el resumen del día.
+- La voz tiene cuatro herramientas: registrar venta, registrar gasto del negocio, registrar retiro personal y consultar el resumen del día.
 - Cada movimiento guarda la frase exacta que lo originó: todo registro se puede rastrear hasta las palabras que lo produjeron.
-- Los totales y la proporción semanal de retiros los calcula el código, nunca el modelo. Wari lee los números, no los inventa.
+- Los totales y la proporción semanal de retiros los calcula el código, nunca el modelo. La voz lee los números, no los inventa.
 
 ## Privacidad
 

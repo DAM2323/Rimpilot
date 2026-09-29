@@ -3,7 +3,7 @@
 Everything a judge reads, in English. The product is built for Spanish-speaking
 vendors in Peru, and it also runs fully in English so anyone can try it: the site
 opens in English for browsers not set to Spanish (ES / EN switch at the top), and
-in English mode Wari listens and answers in English with an English voice.
+in English mode RIMPILOT listens and answers in English with an English voice.
 Amounts stay in soles. The demo video is spoken in Spanish with English subtitles.
 
 Amounts are in Peruvian soles (`S/`). Roughly: `S/ 75 ≈ US$ 20`.
@@ -24,7 +24,7 @@ RIMPILOT finds out by listening.
 ## Short description (under 300 characters)
 
 A voice agent that keeps books for informal vendors in Peru. You talk — from the
-browser or a phone call — and Wari writes down what you sold, what you spent, and
+browser or a phone call — and RIMPILOT writes down what you sold, what you spent, and
 what you took out of the till for yourself. That last one is why your cash never
 matches your sales.
 
@@ -42,7 +42,7 @@ own lunch.
 
 You press one button in the browser and talk the way you would to a friend:
 *"vendí tres polos a veinticinco soles cada uno, me pagaron por Yape, gasté
-quince en pasaje y me saqué veinte para el almuerzo."* Wari — the agent — files
+quince en pasaje y me saqué veinte para el almuerzo."* RIMPILOT files
 three separate entries while you are still speaking, and before hanging up asks
 the question nobody asks themselves: *did you take anything out of the till for
 yourself today?*
