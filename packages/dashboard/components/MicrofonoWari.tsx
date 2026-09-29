@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Mic, Square } from "lucide-react";
 
 /**
@@ -22,6 +23,29 @@ const COLCHON_SEGUNDOS = 0.08;
 type Estado = "inactivo" | "conectando" | "escuchando";
 
 /**
+ * Lo que está haciendo Wari. Llega del backend, que lo saca de los eventos de
+ * la API: si dice "anotando", hay una herramienta de registro en curso.
+ */
+type Fase = "escuchando" | "oyendo" | "pensando" | "hablando" | "anotando" | "revisando";
+const FASES: readonly Fase[] = ["escuchando", "oyendo", "pensando", "hablando", "anotando", "revisando"];
+
+const ETIQUETA_FASE: Record<Fase, string> = {
+  escuchando: "Te escucho",
+  oyendo: "Escuchándote…",
+  pensando: "Pensando…",
+  hablando: "Wari está hablando",
+  anotando: "Anotando en tu libro…",
+  revisando: "Revisando tu caja…",
+};
+
+/** Frases de ejemplo para la conversación vacía: enseñan sin instrucciones. */
+const EJEMPLOS = [
+  "Vendí tres pollos a veinticinco soles, me pagaron por Yape.",
+  "Gasté quince en pasaje.",
+  "Me saqué veinte para el almuerzo.",
+];
+
+/**
  * Un turno de la conversación. Antes el panel mostraba solo la última frase de
  * cada lado y cada respuesta pisaba a la anterior: no se podía seguir el hilo.
  * Ahora queda la conversación, que es lo que se ve en una demo.
@@ -34,6 +58,10 @@ const TURNOS_VISIBLES = 6;
 type Sesion = {
   socket: WebSocket;
   contexto: AudioContext;
+  /** Mide la voz de Wari antes de que salga por el parlante. */
+  medidorWari: AnalyserNode;
+  /** Mide el micrófono. No va al parlante: nadie quiere escucharse a sí mismo. */
+  medidorTu: AnalyserNode;
   pista: MediaStream;
   nodos: AudioNode[];
   fuentes: Set<AudioBufferSourceNode>;
@@ -72,17 +100,62 @@ function aFloat32(muestra: number): number {
   return muestra / (muestra < 0 ? 0x8000 : 0x7fff);
 }
 
+/** Volumen de una señal entre 0 y 1: la raíz cuadrática media, ya con curva. */
+function volumen(medidor: AnalyserNode, muestras: Float32Array<ArrayBuffer>): number {
+  medidor.getFloatTimeDomainData(muestras);
+  let suma = 0;
+  for (let i = 0; i < muestras.length; i += 1) suma += muestras[i] * muestras[i];
+  // La voz hablada ronda un RMS de 0,02 a 0,2; la raíz la abre para que una voz
+  // normal mueva el orbe y un grito no lo sature.
+  return Math.min(1, Math.sqrt(Math.sqrt(suma / muestras.length)) * 1.6);
+}
+
 export function MicrofonoWari() {
+  const router = useRouter();
   const [estado, setEstado] = useState<Estado>("inactivo");
+  const [fase, setFase] = useState<Fase>("escuchando");
+  const orbe = useRef<HTMLDivElement>(null);
+  const cuadro = useRef<number | null>(null);
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const siguienteId = useRef(0);
   const [error, setError] = useState("");
   const sesion = useRef<Sesion | null>(null);
 
+  const detenerOrbe = useCallback((): void => {
+    if (cuadro.current !== null) cancelAnimationFrame(cuadro.current);
+    cuadro.current = null;
+    orbe.current?.style.setProperty("--nivel", "0");
+  }, []);
+
+  /**
+   * El orbe se mueve con el volumen real: el de Wari cuando habla, el tuyo
+   * cuando hablás vos. Se escribe una variable CSS por cuadro, sin pasar por el
+   * estado de React: sesenta renders por segundo no los aguanta ningún teléfono.
+   * Quien pidió menos movimiento no pone en marcha el bucle.
+   */
+  const animarOrbe = useCallback((activa: Sesion): void => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const muestras = new Float32Array(activa.medidorWari.fftSize);
+    let suave = 0;
+    const paso = (): void => {
+      if (activa.cerrada || !orbe.current) return;
+      const wari = volumen(activa.medidorWari, muestras);
+      const tu = volumen(activa.medidorTu, muestras);
+      const nivel = Math.max(wari, tu);
+      // Sube rápido y baja despacio, como un vúmetro: se ve vivo sin temblar.
+      suave = nivel > suave ? suave + (nivel - suave) * 0.5 : suave + (nivel - suave) * 0.12;
+      orbe.current.style.setProperty("--nivel", suave.toFixed(3));
+      orbe.current.dataset.voz = wari >= tu ? "wari" : "tu";
+      cuadro.current = requestAnimationFrame(paso);
+    };
+    cuadro.current = requestAnimationFrame(paso);
+  }, []);
+
   const terminar = useCallback((): void => {
     const activa = sesion.current;
     sesion.current = null;
     setEstado("inactivo");
+    detenerOrbe();
     if (!activa || activa.cerrada) return;
     activa.cerrada = true;
     activa.fuentes.forEach((fuente) => fuente.stop());
@@ -94,7 +167,7 @@ export function MicrofonoWari() {
     }
     activa.socket.close();
     void activa.contexto.close();
-  }, []);
+  }, [detenerOrbe]);
 
   // Un micrófono abierto y una sesión facturable no pueden sobrevivir a la vista.
   useEffect(() => terminar, [terminar]);
@@ -109,7 +182,7 @@ export function MicrofonoWari() {
     for (let i = 0; i < pcm.length; i += 1) canal[i] = aFloat32(pcm[i]);
     const fuente = activa.contexto.createBufferSource();
     fuente.buffer = buffer;
-    fuente.connect(activa.contexto.destination);
+    fuente.connect(activa.medidorWari);
     activa.siguienteInicio = Math.max(activa.siguienteInicio, activa.contexto.currentTime + COLCHON_SEGUNDOS);
     fuente.start(activa.siguienteInicio);
     activa.siguienteInicio += buffer.duration;
@@ -135,6 +208,7 @@ export function MicrofonoWari() {
     silencio.gain.value = 0;
     silencio.connect(activa.contexto.destination);
 
+    origen.connect(activa.medidorTu);
     try {
       await activa.contexto.audioWorklet.addModule(RUTA_WORKLET);
       const captura = new AudioWorkletNode(activa.contexto, "captura-microfono");
@@ -160,6 +234,7 @@ export function MicrofonoWari() {
   const empezar = useCallback(async (): Promise<void> => {
     setError("");
     setTurnos([]);
+    setFase("escuchando");
     setEstado("conectando");
 
     const wsUrl = process.env.NEXT_PUBLIC_BACKEND_WS_URL;
@@ -177,7 +252,7 @@ export function MicrofonoWari() {
         audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
     } catch {
-      setError("No pudimos usar el micrófono. Dale permiso al navegador y volvé a intentar.");
+      setError("No pudimos usar el micrófono. Dale permiso al navegador y vuelve a intentarlo.");
       setEstado("inactivo");
       return;
     }
@@ -196,8 +271,16 @@ export function MicrofonoWari() {
     }
 
     const contexto = new AudioContext({ sampleRate: HZ });
+    const medidorWari = contexto.createAnalyser();
+    medidorWari.fftSize = 512;
+    medidorWari.connect(contexto.destination);
+    const medidorTu = contexto.createAnalyser();
+    medidorTu.fftSize = 512;
     const socket = new WebSocket(wsUrl);
-    const activa: Sesion = { socket, contexto, pista, nodos: [], fuentes: new Set(), siguienteInicio: 0, cerrada: false };
+    const activa: Sesion = {
+      socket, contexto, medidorWari, medidorTu, pista,
+      nodos: [medidorWari, medidorTu], fuentes: new Set(), siguienteInicio: 0, cerrada: false,
+    };
     sesion.current = activa;
 
     socket.onopen = () => {
@@ -206,7 +289,7 @@ export function MicrofonoWari() {
     };
 
     socket.onmessage = (evento: MessageEvent<string>) => {
-      let mensaje: { tipo?: string; audio?: string; texto?: string; final?: boolean; mensaje?: string };
+      let mensaje: { tipo?: string; audio?: string; texto?: string; final?: boolean; mensaje?: string; estado?: string };
       try {
         mensaje = JSON.parse(evento.data);
       } catch {
@@ -214,6 +297,12 @@ export function MicrofonoWari() {
       }
       if (mensaje.tipo === "listo") {
         setEstado("escuchando");
+        animarOrbe(activa);
+      } else if (mensaje.tipo === "estado" && FASES.includes(mensaje.estado as Fase)) {
+        setFase(mensaje.estado as Fase);
+      } else if (mensaje.tipo === "anotado") {
+        // La fila nueva aparece en el momento en que queda escrita.
+        router.refresh();
       } else if (mensaje.tipo === "audio" && mensaje.audio) {
         reproducir(activa, deBase64(mensaje.audio));
       } else if (mensaje.tipo === "limpiar") {
@@ -246,34 +335,47 @@ export function MicrofonoWari() {
 
     socket.onerror = () => setError("Se cortó la conexión con Wari.");
     socket.onclose = () => { if (sesion.current === activa) terminar(); };
-  }, [conectarCaptura, reproducir, terminar]);
+  }, [animarOrbe, conectarCaptura, reproducir, router, terminar]);
 
   const ocupado = estado === "conectando";
   const activo = estado === "escuchando" || ocupado;
+  const etiqueta = estado === "escuchando" ? ETIQUETA_FASE[fase] : ocupado ? "Conectando…" : "Micrófono apagado";
 
-  return <section className="mic-panel">
-    <div className="mic-copy">
-      <h2>Contale tu día a Wari</h2>
-      <p>Tocá el botón y hablá normal: «vendí dos panes a tres soles». Wari lo anota en tu libro mientras hablás.</p>
+  return <section className="panel-wari" aria-labelledby="wari-titulo">
+    <div className="wari-control">
+      {/* El orbe es la cara de Wari. Decorativo para un lector de pantalla: lo
+          que significa ya lo dice la etiqueta de estado que tiene al lado. */}
+      <div ref={orbe} className="orbe" data-fase={estado === "escuchando" ? fase : estado} data-voz="wari" aria-hidden="true">
+        <span className="orbe-halo" />
+        <span className="orbe-nucleo" />
+      </div>
+      <div className="wari-texto">
+        <h2 id="wari-titulo">Cuéntale tu día a Wari</h2>
+        <p className="wari-fase" role="status">{etiqueta}</p>
+        <button type="button" className={`mic-button${activo ? " activa" : ""}`} onClick={activo ? terminar : () => void empezar()} aria-busy={ocupado}>
+          {ocupado ? <Loader2 size={18} aria-hidden="true"/> : activo ? <Square size={16} aria-hidden="true"/> : <Mic size={18} aria-hidden="true"/>}
+          {ocupado ? "Conectando…" : activo ? "Terminar" : "Hablar con Wari"}
+        </button>
+        {error && <p className="mic-error" role="alert">{error}</p>}
+      </div>
     </div>
-    <button type="button" className={`mic-button${activo ? " activa" : ""}`} onClick={activo ? terminar : () => void empezar()} aria-busy={ocupado}>
-      {ocupado ? <Loader2 size={18} aria-hidden="true"/> : activo ? <Square size={16} aria-hidden="true"/> : <Mic size={18} aria-hidden="true"/>}
-      {ocupado ? "Conectando…" : activo ? "Terminar" : "Hablar con Wari"}
-    </button>
-    <p className="mic-estado" role="status">
-      {estado === "escuchando" ? "Wari te está escuchando." : ocupado ? "Abriendo la sesión de voz…" : "Micrófono apagado."}
-    </p>
-    {turnos.length > 0 && (
+
+    {turnos.length > 0 ? (
       // role="log": un lector de pantalla anuncia cada frase nueva sin repetir
       // toda la conversación.
-      <ol className="mic-conversacion" role="log" aria-live="polite" aria-label="Conversación con Wari">
+      <ol className="conversacion" role="log" aria-live="polite" aria-label="Conversación con Wari">
         {turnos.map((turno) => (
-          <li key={turno.id} className={turno.quien === "wari" ? "mic-respuesta" : "mic-transcripcion"}>
-            <span>{turno.quien === "wari" ? "Wari" : "Tú"}</span>{turno.texto}
+          <li key={turno.id} className={`burbuja ${turno.quien}`}>
+            <span className="burbuja-quien">{turno.quien === "wari" ? "Wari" : "Tú"}</span>
+            <span className="burbuja-texto">{turno.texto}</span>
           </li>
         ))}
       </ol>
+    ) : (
+      <div className="conversacion-vacia">
+        <p>Habla como hablas. Por ejemplo:</p>
+        <ul>{EJEMPLOS.map((ejemplo) => <li key={ejemplo}>«{ejemplo}»</li>)}</ul>
+      </div>
     )}
-    {error && <p className="mic-error" role="alert">{error}</p>}
   </section>;
 }

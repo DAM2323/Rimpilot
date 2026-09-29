@@ -8,7 +8,7 @@ export async function POST(request: Request): Promise<Response> {
   const origen = new URL(request.url).origin;
   // Más estricto que el registro: acá es donde se prueban contraseñas.
   if (!permitir(`entrar:${quien(request)}`, 8)) {
-    return aError(origen, "/entrar", "Demasiados intentos. Esperá unos minutos.");
+    return aError(origen, "/entrar", "Demasiados intentos. Espera unos minutos.");
   }
 
   const formulario = await request.formData();

@@ -26,7 +26,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   // por si alguna vez cambia el matcher.
   const vendedorId = request.headers.get("x-vendedor");
   if (!vendedorId) {
-    return NextResponse.json({ error: "Entrá a tu libro antes de hablar con Wari." }, { status: 401 });
+    return NextResponse.json({ error: "Entra a tu libro antes de hablar con Wari." }, { status: 401 });
   }
 
   let respuesta: Response;

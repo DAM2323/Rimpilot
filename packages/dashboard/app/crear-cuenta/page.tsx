@@ -11,8 +11,8 @@ export default function CrearCuenta({ searchParams }: { searchParams: { error?: 
     </Link>
 
     <section className="puerta-tarjeta">
-      <h1>Abrí tu libro</h1>
-      <p className="puerta-bajada">Dos datos y ya podés hablarle a Wari.</p>
+      <h1>Abre tu libro</h1>
+      <p className="puerta-bajada">Dos datos y ya puedes hablar con Wari.</p>
 
       {searchParams.error && <p className="puerta-error" role="alert">{searchParams.error}</p>}
 
@@ -36,9 +36,9 @@ export default function CrearCuenta({ searchParams }: { searchParams: { error?: 
       </form>
 
       <p className="puerta-pie">
-        ¿Ya tenés cuenta?{" "}
+        ¿Ya tienes cuenta?{" "}
         <Link href={searchParams.volver ? `/entrar?volver=${encodeURIComponent(searchParams.volver)}` : "/entrar"}>
-          Entrá
+          Entra
         </Link>
       </p>
     </section>

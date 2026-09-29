@@ -18,19 +18,21 @@ Duración: menos de 3 minutos. Todo se hace desde el navegador, sin llamar a nin
 1. **La landing.** Unos segundos: el titular, la resta de 75 a 40 y la lista
    de con qué está hecho. No hace falta leerla, solo que se vea que hay un
    producto detrás.
-2. **Crear el libro.** Tocá **Crear mi libro**, poné un correo, una contraseña
-   y un nombre, y entrás directo al libro. Todo en cero. Señalá las cuatro
-   tarjetas: **Ventas · Gastos · Sacaste para ti · Caja**.
-   (Si preferís no mostrar el formulario, **Probar sin registrarme** entra en
+2. **Crear el libro.** Toca **Crear mi libro**, pon un correo, una contraseña
+   y un nombre, y entras directo al libro. Todo en cero. Señala **la cuenta de
+   hoy**: *Vendiste − Gastaste − Sacaste para ti = Te queda en caja*.
+   (Si prefieres no mostrar el formulario, **Probar sin registrarme** entra en
    un clic con un libro vacío propio.)
-3. Tocá **Hablar con Wari** y decí, en un solo tirón:
+3. Toca **Hablar con Wari** y di, en un solo tirón:
 
    > “Vendí tres pollos a veinticinco soles cada uno, me pagaron por Yape. Gasté quince en pasaje y me saqué veinte para el almuerzo.”
 
-4. Mientras hablás aparece escrito lo que dijiste y, debajo, en violeta, lo que
-   contesta Wari. Los movimientos entran al libro y las tarjetas se actualizan
-   solas, sin recargar.
-5. Decile «eso es todo por hoy». Wari cierra leyendo: ventas S/ 75, gastos S/ 15,
+4. Mientras hablas, el orbe de Wari se mueve con tu voz y con la suya, y debajo
+   dice qué está haciendo: *Escuchándote… · Pensando… · Anotando en tu libro…*.
+   La conversación queda escrita como un chat, tú a la derecha y Wari a la
+   izquierda. En el momento en que dice «Anotando», la fila aparece en el libro
+   y la cuenta de arriba cambia sola, sin recargar.
+5. Dile «eso es todo por hoy». Wari cierra leyendo: ventas S/ 75, gastos S/ 15,
    retiros S/ 20, **caja S/ 40**.
 
 ## El momento que importa
@@ -56,7 +58,7 @@ encima, en el orden en que pasan las cosas.
 | --- | --- |
 | La landing | Street vendors in Peru know what they sold. Not where the money went. |
 | Crea la cuenta | Sign up, and the ledger is open. No setup. |
-| Panel en cero | Sales · Expenses · What she took out · Cash |
+| Panel en cero | Sold − Spent − Took out for herself = Left in the till |
 | Toca el botón | One button. No menus. |
 | Empieza a hablar | “I sold three chickens at twenty-five soles each, paid by Yape.” |
 | Sigue | “I spent fifteen on the bus.” |

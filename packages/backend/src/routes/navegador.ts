@@ -34,9 +34,9 @@ const tokenBodySchema = z.object({ vendedorId: z.string().uuid() });
 
 /** Lo que ve la persona según qué tope se alcanzó. Ninguno es un error suyo. */
 const MENSAJE_RECHAZO: Record<Rechazo, string> = {
-  simultaneas: "Hay demasiadas conversaciones abiertas ahora. Probá en un momento.",
-  diaria_vendedor: "Ya hablaste mucho con Wari hoy. Mañana podés seguir.",
-  diaria_total: "Wari atendió todo lo que podía por hoy. Probá mañana.",
+  simultaneas: "Hay demasiadas conversaciones abiertas ahora. Prueba en un momento.",
+  diaria_vendedor: "Ya hablaste mucho con Wari hoy. Mañana puedes seguir.",
+  diaria_total: "Wari atendió todo lo que podía por hoy. Prueba mañana.",
 };
 
 function claveInterna(): string | null {
@@ -143,7 +143,7 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
         const verificado = verificarStreamToken(mensaje.data.token);
         if (!verificado) {
           request.log.warn("Sesión de navegador rechazada: token ausente, inválido o vencido");
-          send({ tipo: "error", mensaje: "Sesión vencida. Recargá el panel y volvé a intentar." });
+          send({ tipo: "error", mensaje: "Sesión vencida. Recarga la página y vuelve a intentarlo." });
           socket.close();
           return;
         }
@@ -163,6 +163,7 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
           onAudio: (audio) => send({ tipo: "audio", audio }),
           onBargeIn: () => send({ tipo: "limpiar" }),
           onTranscript: (texto, final) => send({ tipo: "transcripcion", texto, final }),
+          onEstado: (estado) => send({ tipo: "estado", estado }),
           onTranscripcionDeWari: (texto) => {
             // Queda en el log y además se muestra: en una demo, ver la
             // conversación escrita es la mitad de lo que hay que mostrar.
@@ -197,8 +198,12 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
             }
             request.log.info({ tipo, manejado }, manejado ? "Evento de AssemblyAI" : "Evento de AssemblyAI que no sabemos manejar");
           },
-          onHerramienta: (nombre, argumentos, resultado) =>
-            request.log.info({ herramienta: nombre, argumentos, resultado }, "Wari pidió una herramienta"),
+          onHerramienta: (nombre, argumentos, resultado) => {
+            request.log.info({ herramienta: nombre, argumentos, resultado }, "Wari pidió una herramienta");
+            // El libro se refresca solo cada 5 s; con este aviso la fila nueva
+            // aparece en el momento en que queda escrita, no hasta 5 s después.
+            if (resultado.ok === true && nombre.startsWith("registrar_")) send({ tipo: "anotado" });
+          },
           onError: (mensajeError) => {
             request.log.error({ mensaje: mensajeError }, "Error de Wari en el navegador");
             // Antes esto moría en el log del servidor: el vendedor veía el
@@ -207,14 +212,14 @@ export const navegadorRoutes: FastifyPluginCallback = (app, _opciones, listo) =>
           },
           onLimite: (mensajeLimite) => {
             request.log.info({ mensaje: mensajeLimite }, "Sesión de voz cerrada por duración máxima");
-            send({ tipo: "error", mensaje: `${mensajeLimite} Tocá Hablar con Wari para seguir.` });
+            send({ tipo: "error", mensaje: `${mensajeLimite} Toca Hablar con Wari para seguir.` });
             cerrar();
             socket.close();
           },
           onFatal: (mensajeError) => {
             // Regla 20: mensaje real, nunca un micrófono abierto contra la nada.
             request.log.error({ mensaje: mensajeError }, "Sesión de voz caída: se cierra el canal del navegador");
-            send({ tipo: "error", mensaje: "Wari se desconectó. Volvé a intentar en un momento." });
+            send({ tipo: "error", mensaje: "Wari se desconectó. Vuelve a intentarlo en un momento." });
             cerrar();
             socket.close();
           },

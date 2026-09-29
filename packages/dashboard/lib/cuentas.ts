@@ -36,7 +36,7 @@ export type Resultado = { ok: true; vendedorId: string } | { ok: false; mensaje:
 export async function registrar(datos: z.infer<typeof registroSchema>): Promise<Resultado> {
   const cliente = db();
   const { data: existente } = await cliente.from("vendedores").select("id").eq("email", datos.email).maybeSingle();
-  if (existente) return { ok: false, mensaje: "Ya hay una cuenta con ese correo. Probá entrando." };
+  if (existente) return { ok: false, mensaje: "Ya hay una cuenta con ese correo. Prueba entrando." };
 
   const { data, error } = await cliente.from("vendedores").insert({
     email: datos.email,
@@ -49,7 +49,7 @@ export async function registrar(datos: z.infer<typeof registroSchema>): Promise<
     // Al vendedor se le da un mensaje parejo; el motivo real queda en el log del
     // servidor. Sin esto, un fallo de base es indistinguible de uno de red.
     console.error("registro: no se pudo crear el vendedor", error);
-    return { ok: false, mensaje: "No pudimos crear la cuenta. Probá de nuevo." };
+    return { ok: false, mensaje: "No pudimos crear la cuenta. Prueba de nuevo." };
   }
   return { ok: true, vendedorId: data.id as string };
 }
@@ -83,7 +83,7 @@ export async function crearInvitado(): Promise<Resultado> {
 
   if (error || !data) {
     console.error("invitado: no se pudo crear el libro de prueba", error);
-    return { ok: false, mensaje: "No pudimos abrir el libro de prueba. Probá de nuevo." };
+    return { ok: false, mensaje: "No pudimos abrir el libro de prueba. Prueba de nuevo." };
   }
   return { ok: true, vendedorId: data.id as string };
 }

@@ -81,6 +81,13 @@ export function vozElegida(): Voz {
   return pedida ? vozValida(pedida) : VOZ_POR_DEFECTO;
 }
 
+/**
+ * En qué está Wari, para que el navegador lo muestre. Sale de los eventos reales
+ * de la API, no de un temporizador: si la etiqueta dice "Anotando", es porque
+ * en ese momento hay una herramienta de registro en curso.
+ */
+export type EstadoVoz = "oyendo" | "pensando" | "hablando" | "escuchando" | "anotando" | "revisando";
+
 /** Lo que el puente necesita saber de la sesión, sea teléfono o navegador. */
 export type ContextoSesion = Omit<ToolContext, "getTranscript"> & { formato: FormatoAudio };
 
@@ -156,6 +163,8 @@ export class VoiceAgentBridge {
        * es justo lo que hace falta para entender por qué no anotó nada.
        */
       onTranscripcionDeWari?: (texto: string) => void;
+      /** Cambió lo que Wari está haciendo. El teléfono no lo usa. */
+      onEstado?: (estado: EstadoVoz) => void;
       /**
        * Cada evento que llega de AssemblyAI, con si lo entendimos o no. Los
        * nombres de los eventos son de la API, no nuestros: si alguno cambia o
@@ -281,6 +290,7 @@ export class VoiceAgentBridge {
     } else if (event.type === "input.speech.started") {
       this.latestTranscript = "";
       this.handlers.onBargeIn();
+      this.handlers.onEstado?.("oyendo");
     } else if (event.type === "transcript.user.delta" && event.text) {
       this.latestTranscript = event.text.startsWith(this.latestTranscript)
         ? event.text
@@ -289,21 +299,25 @@ export class VoiceAgentBridge {
     } else if (event.type === "transcript.user" && event.text) {
       this.latestTranscript = event.text;
       this.handlers.onTranscript?.(this.latestTranscript, true);
+      this.handlers.onEstado?.("pensando");
     } else if (event.type === "transcript.agent" && event.text) {
       this.handlers.onTranscripcionDeWari?.(event.text);
-    } else if (event.type === "reply.started" || event.type === "input.speech.stopped"
-      || event.type === "transcript.agent.delta") {
+    } else if (event.type === "reply.started") {
+      this.handlers.onEstado?.("hablando");
+    } else if (event.type === "input.speech.stopped" || event.type === "transcript.agent.delta") {
       // Eventos normales del protocolo que no exigen nada de nuestra parte. Se
       // marcan como conocidos igual: un log que los llama "no sabemos manejar"
       // manda a buscar el problema donde no está.
       this.handlers.onEvento?.(event.type, true, event);
       return;
     } else if (event.type === "tool.call") {
+      this.handlers.onEstado?.(event.name === "consultar_resumen_del_dia" ? "revisando" : "anotando");
       // Se ejecuta ya, no al cerrar el turno: el agente se queda esperando el
       // resultado antes de volver a hablar, así que aguardar un `reply.done`
       // que no va a llegar deja la conversación muda para siempre.
       void this.responderHerramienta(event);
     } else if (event.type === "reply.done") {
+      this.handlers.onEstado?.("escuchando");
       this.handlers.onEvento?.(event.type, true, event);
       return;
     } else if (event.type === "session.error") {
