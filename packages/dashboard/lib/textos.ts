@@ -34,7 +34,7 @@ const es = {
     evento: "AssemblyAI Voice Agent Hackathon 2026",
     entrar: "Entrar",
     titulo1: "Cuéntale tu día.",
-    titulo2: "RIMPILOT lleva tus cuentas.",
+    titulo2: "Lleva tus cuentas.",
     explicacion: "Anota tus ventas, tus gastos y la plata que sacas de la caja para ti. Tú hablas, y al final del día sabes cuánto tienes de verdad.",
     puntos: [
       "Anota ventas y gastos con tu voz, sin escribir nada",
@@ -239,7 +239,7 @@ const en: Textos = {
     evento: "AssemblyAI Voice Agent Hackathon 2026",
     entrar: "Sign in",
     titulo1: "Tell it your day.",
-    titulo2: "RIMPILOT keeps your books.",
+    titulo2: "Keep your books.",
     explicacion: "It records your sales, your expenses and the money you take out of the till for yourself. You talk, and at the end of the day you know how much you really have.",
     puntos: [
       "Records sales and expenses with your voice, no typing",
