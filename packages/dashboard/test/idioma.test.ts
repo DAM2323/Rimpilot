@@ -19,9 +19,11 @@ describe("qué idioma se muestra", () => {
     assert.equal(idiomaDe("en", "es-PE"), "en");
     assert.equal(idiomaDe("es", "en-US"), "es");
   });
-  it("sin ninguna pista queda en español, y una cookie inventada no cuenta", () => {
-    assert.equal(idiomaDe(undefined, null), "es");
-    assert.equal(idiomaDe("fr", undefined), "es");
+  it("sin ninguna pista —un bot, una vista previa— sale en inglés, y una cookie inventada no cuenta", () => {
+    assert.equal(idiomaDe(undefined, null), "en");
+    assert.equal(idiomaDe("fr", undefined), "en");
+    assert.equal(idiomaDe(undefined, "*"), "en");
+    assert.equal(idiomaDe("fr", "es-PE"), "es");
   });
 });
 
