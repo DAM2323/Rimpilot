@@ -6,7 +6,12 @@ const money = new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN
 const labels = { venta: "Venta", gasto: "Gasto", retiro: "Retiro" };
 const icons = { venta: ShoppingBag, gasto: ReceiptText, retiro: HandCoins };
 
-function hora(value: string): string { return new Intl.DateTimeFormat("es-PE", { hour: "numeric", minute: "2-digit" }).format(new Date(value)); }
+/**
+ * Con la zona de Lima explícita: sin ella se usa la del servidor, que en tu
+ * computadora coincide con Perú y en Vercel es UTC. Desplegado, cada hora salía
+ * corrida cinco horas.
+ */
+function hora(value: string): string { return new Intl.DateTimeFormat("es-PE", { hour: "numeric", minute: "2-digit", timeZone: "America/Lima" }).format(new Date(value)); }
 
 export function ListaMovimientos({ movimientos }: { movimientos: Movimiento[] }) {
   if (!movimientos.length) return <div className="empty-state"><ShoppingBag aria-hidden="true" size={26}/><h2>Aún no hay movimientos</h2><p>Háblale a Wari y cuéntale lo que vendiste, lo que gastaste y lo que sacaste para ti. Aparecerá aquí automáticamente.</p></div>;

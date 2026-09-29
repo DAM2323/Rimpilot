@@ -21,6 +21,16 @@ const COLCHON_SEGUNDOS = 0.08;
 
 type Estado = "inactivo" | "conectando" | "escuchando";
 
+/**
+ * Un turno de la conversación. Antes el panel mostraba solo la última frase de
+ * cada lado y cada respuesta pisaba a la anterior: no se podía seguir el hilo.
+ * Ahora queda la conversación, que es lo que se ve en una demo.
+ */
+type Turno = { id: number; quien: "tu" | "wari"; texto: string; final: boolean };
+
+/** Suficiente para seguir el hilo sin empujar el libro fuera de la pantalla. */
+const TURNOS_VISIBLES = 6;
+
 type Sesion = {
   socket: WebSocket;
   contexto: AudioContext;
@@ -64,8 +74,8 @@ function aFloat32(muestra: number): number {
 
 export function MicrofonoWari() {
   const [estado, setEstado] = useState<Estado>("inactivo");
-  const [transcripcion, setTranscripcion] = useState("");
-  const [respuesta, setRespuesta] = useState("");
+  const [turnos, setTurnos] = useState<Turno[]>([]);
+  const siguienteId = useRef(0);
   const [error, setError] = useState("");
   const sesion = useRef<Sesion | null>(null);
 
@@ -149,8 +159,7 @@ export function MicrofonoWari() {
 
   const empezar = useCallback(async (): Promise<void> => {
     setError("");
-    setTranscripcion("");
-    setRespuesta("");
+    setTurnos([]);
     setEstado("conectando");
 
     const wsUrl = process.env.NEXT_PUBLIC_BACKEND_WS_URL;
@@ -197,7 +206,7 @@ export function MicrofonoWari() {
     };
 
     socket.onmessage = (evento: MessageEvent<string>) => {
-      let mensaje: { tipo?: string; audio?: string; texto?: string; mensaje?: string };
+      let mensaje: { tipo?: string; audio?: string; texto?: string; final?: boolean; mensaje?: string };
       try {
         mensaje = JSON.parse(evento.data);
       } catch {
@@ -213,9 +222,23 @@ export function MicrofonoWari() {
         activa.fuentes.clear();
         activa.siguienteInicio = 0;
       } else if (mensaje.tipo === "transcripcion" && typeof mensaje.texto === "string") {
-        setTranscripcion(mensaje.texto);
+        const texto = mensaje.texto;
+        const final = mensaje.final === true;
+        setTurnos((previos) => {
+          const ultimo = previos[previos.length - 1];
+          // Mientras la persona habla llegan versiones parciales de la misma
+          // frase: se actualiza su burbuja en vez de abrir una nueva por cada una.
+          if (ultimo && ultimo.quien === "tu" && !ultimo.final) {
+            return [...previos.slice(0, -1), { ...ultimo, texto, final }];
+          }
+          siguienteId.current += 1;
+          return [...previos, { id: siguienteId.current, quien: "tu" as const, texto, final }].slice(-TURNOS_VISIBLES);
+        });
       } else if (mensaje.tipo === "wari" && typeof mensaje.texto === "string") {
-        setRespuesta(mensaje.texto);
+        const texto = mensaje.texto;
+        siguienteId.current += 1;
+        const id = siguienteId.current;
+        setTurnos((previos) => [...previos, { id, quien: "wari" as const, texto, final: true }].slice(-TURNOS_VISIBLES));
       } else if (mensaje.tipo === "aviso" || mensaje.tipo === "error") {
         setError(mensaje.mensaje ?? "La sesión de voz falló.");
       }
@@ -240,8 +263,17 @@ export function MicrofonoWari() {
     <p className="mic-estado" role="status">
       {estado === "escuchando" ? "Wari te está escuchando." : ocupado ? "Abriendo la sesión de voz…" : "Micrófono apagado."}
     </p>
-    {transcripcion && <blockquote className="mic-transcripcion">{transcripcion}</blockquote>}
-    {respuesta && <blockquote className="mic-respuesta"><span>Wari</span>{respuesta}</blockquote>}
+    {turnos.length > 0 && (
+      // role="log": un lector de pantalla anuncia cada frase nueva sin repetir
+      // toda la conversación.
+      <ol className="mic-conversacion" role="log" aria-live="polite" aria-label="Conversación con Wari">
+        {turnos.map((turno) => (
+          <li key={turno.id} className={turno.quien === "wari" ? "mic-respuesta" : "mic-transcripcion"}>
+            <span>{turno.quien === "wari" ? "Wari" : "Tú"}</span>{turno.texto}
+          </li>
+        ))}
+      </ol>
+    )}
     {error && <p className="mic-error" role="alert">{error}</p>}
   </section>;
 }
