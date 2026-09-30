@@ -216,7 +216,7 @@ const es = {
   token: {
     sinConfigurar: "Falta RIMPILOT_BACKEND_URL o RIMPILOT_INTERNAL_KEY en packages/dashboard/.env.local.",
     sinSesion: "Entra a tu libro antes de empezar a hablar.",
-    noResponde: "El backend de voz no responde.",
+    noResponde: "El backend de voz sigue despertando. Vuelve a intentarlo en un momento.",
     rechazo: "El backend de voz rechazó la sesión.",
     sinToken: "El backend de voz no devolvió un token.",
   },
@@ -420,7 +420,7 @@ const en: Textos = {
   token: {
     sinConfigurar: "RIMPILOT_BACKEND_URL or RIMPILOT_INTERNAL_KEY is missing in packages/dashboard/.env.local.",
     sinSesion: "Sign in to your ledger before you start talking.",
-    noResponde: "The voice backend isn't responding.",
+    noResponde: "The voice backend is still waking up. Try again in a moment.",
     rechazo: "The voice backend rejected the session.",
     sinToken: "The voice backend didn't return a token.",
   },

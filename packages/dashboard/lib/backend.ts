@@ -1,6 +1,6 @@
 /**
  * El backend de voz vive en un servicio gratis de Render que se duerme tras
- * unos quince minutos sin uso y tarda cerca de un minuto en despertar. El
+ * unos quince minutos sin uso y tarda de uno a dos minutos en despertar. El
  * primero que tocaba "Empezar a hablar" se encontraba con "el backend de voz
  * rechazó la sesión": el pedido del token llegaba mientras el servicio todavía
  * estaba arrancando.
@@ -11,8 +11,8 @@
  */
 
 /** Lo que devuelve Render mientras el servicio arranca, o un backend saturado. */
-const ESTADOS_DE_ESPERA = new Set([502, 503, 504]);
-const PLAZO_TOTAL_MS = 60_000;
+export const ESTADOS_DE_ESPERA = new Set([502, 503, 504]);
+const PLAZO_TOTAL_MS = 120_000;
 const PLAZO_POR_INTENTO_MS = 20_000;
 const PAUSA_MS = 2_500;
 const DESPERTAR_CADA_MS = 60_000;
@@ -34,7 +34,7 @@ export function despertarBackend(ahora = Date.now()): void {
 
 /**
  * Hace el pedido y, si el backend está despertando (sin conexión, o un 502,
- * 503 o 504), vuelve a probar hasta un minuto. Cualquier otra respuesta —un
+ * 503 o 504), vuelve a probar hasta dos minutos. Cualquier otra respuesta —un
  * 403, un 400— es definitiva y se devuelve tal cual.
  */
 export async function pedirConEspera(
