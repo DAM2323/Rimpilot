@@ -3,6 +3,7 @@ import { z } from "zod";
 import { promptDeWari, type Idioma } from "./systemPrompt.js";
 import { gastoSchema, resumenSchema, retiroSchema, ventaSchema, herramientas } from "./tools.js";
 import { textoDeFrame } from "./rawData.js";
+import { FiltroRepetidos } from "./repetidos.js";
 import { registrarMovimiento, resumenParaCierre } from "../services/libroContable.js";
 
 /**
@@ -162,6 +163,8 @@ export class VoiceAgentBridge {
   private reconectando = false;
   private cerradoPorNosotros = false;
   private plazo: ReturnType<typeof setTimeout> | null = null;
+  /** Uno por sesión: lo repetido se mide dentro de una misma conversación. */
+  private readonly repetidos = new FiltroRepetidos();
 
   constructor(
     private readonly context: ContextoSesion,
@@ -375,31 +378,63 @@ export class VoiceAgentBridge {
     }
   }
 
+  /**
+   * Lo que la herramienta le contesta a la voz. Antes era solo `ok` y un id, y
+   * la voz no siempre entendía que ya estaba hecho: volvía a pedir lo mismo.
+   * Ahora dice en palabras qué quedó anotado y que no hay que repetirlo, en el
+   * idioma de la conversación.
+   */
+  private respuestaDeAnotado(tipo: "venta" | "gasto" | "retiro", monto: number, anotado: { id: string; repetido: boolean }): Record<string, unknown> {
+    const en = this.context.idioma === "en";
+    const cifra = `${monto.toFixed(2).replace(/\.00$/, "")} soles`;
+    const nombre = en
+      ? { venta: "Sale", gasto: "Business expense", retiro: "Money taken for yourself" }[tipo]
+      : { venta: "Venta", gasto: "Gasto del negocio", retiro: "Retiro para ti" }[tipo];
+    if (anotado.repetido) {
+      return {
+        ok: true, movimientoId: anotado.id, ya_estaba_anotado: true,
+        message: en
+          ? `${nombre} of ${cifra} was already recorded. Nothing new was added. Do not call the tool again for this.`
+          : `${nombre} de ${cifra} ya estaba anotado. No se anotó otra vez. No vuelvas a llamar la herramienta por esto.`,
+      };
+    }
+    return {
+      ok: true, movimientoId: anotado.id,
+      message: en
+        ? `${nombre} of ${cifra} recorded. It is done: do not call the tool again for this.`
+        : `${nombre} de ${cifra} anotado. Ya está hecho: no vuelvas a llamar la herramienta por esto.`,
+    };
+  }
+
   private async executeTool(name: string, rawArguments: unknown): Promise<Record<string, unknown>> {
     const transcripcion = this.latestTranscript;
+    const en = this.context.idioma === "en";
     if (name === "registrar_venta") {
       const args = ventaSchema.parse(rawArguments);
-      const result = await registrarMovimiento(this.context.vendedorId, {
-        tipo: "venta", descripcion: args.descripcion ?? (this.context.idioma === "en" ? "Sale" : "Venta"), monto: args.monto, contraparte: args.contraparte,
-        metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
-      });
-      return { ok: true, movimientoId: result.id };
+      const frase = args.transcripcion ?? transcripcion;
+      const anotado = await this.repetidos.anotar(FiltroRepetidos.clave("venta", args.monto, frase), async () => (await registrarMovimiento(this.context.vendedorId, {
+        tipo: "venta", descripcion: args.descripcion ?? (en ? "Sale" : "Venta"), monto: args.monto, contraparte: args.contraparte,
+        metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: frase,
+      })).id);
+      return this.respuestaDeAnotado("venta", args.monto, anotado);
     }
     if (name === "registrar_gasto") {
       const args = gastoSchema.parse(rawArguments);
-      const result = await registrarMovimiento(this.context.vendedorId, {
-        tipo: "gasto", descripcion: args.descripcion ?? (this.context.idioma === "en" ? "Expense" : "Gasto"), monto: args.monto, metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
-      });
-      return { ok: true, movimientoId: result.id };
+      const frase = args.transcripcion ?? transcripcion;
+      const anotado = await this.repetidos.anotar(FiltroRepetidos.clave("gasto", args.monto, frase), async () => (await registrarMovimiento(this.context.vendedorId, {
+        tipo: "gasto", descripcion: args.descripcion ?? (en ? "Expense" : "Gasto"), monto: args.monto, metodoPago: args.metodo_pago, callSid: this.context.callSid, transcripcion: frase,
+      })).id);
+      return this.respuestaDeAnotado("gasto", args.monto, anotado);
     }
     if (name === "registrar_retiro") {
       const args = retiroSchema.parse(rawArguments);
-      const result = await registrarMovimiento(this.context.vendedorId, {
+      const frase = args.transcripcion ?? transcripcion;
+      const anotado = await this.repetidos.anotar(FiltroRepetidos.clave("retiro", args.monto, frase), async () => (await registrarMovimiento(this.context.vendedorId, {
         // Un retiro no tiene contraparte: la plata se la lleva el propio vendedor.
-        tipo: "retiro", descripcion: args.motivo?.trim() || (this.context.idioma === "en" ? "Personal withdrawal" : "Retiro personal"), monto: args.monto,
-        metodoPago: args.metodo_pago ?? "efectivo", callSid: this.context.callSid, transcripcion: args.transcripcion ?? transcripcion,
-      });
-      return { ok: true, movimientoId: result.id };
+        tipo: "retiro", descripcion: args.motivo?.trim() || (en ? "Personal withdrawal" : "Retiro personal"), monto: args.monto,
+        metodoPago: args.metodo_pago ?? "efectivo", callSid: this.context.callSid, transcripcion: frase,
+      })).id);
+      return this.respuestaDeAnotado("retiro", args.monto, anotado);
     }
     if (name === "consultar_resumen_del_dia") {
       const args = resumenSchema.parse(rawArguments);

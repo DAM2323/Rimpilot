@@ -14,7 +14,7 @@ export const herramientas = [
   {
     type: "function",
     name: "registrar_venta",
-    description: "Registra una venta. Llamar una vez por cada venta mencionada.",
+    description: "Registra una venta. Una llamada por cada venta mencionada, una sola vez. Varias unidades de lo mismo en una frase son una sola venta con el total.",
     parameters: {
       type: "object",
       properties: {
@@ -29,7 +29,7 @@ export const herramientas = [
   {
     type: "function",
     name: "registrar_gasto",
-    description: "Registra un gasto del negocio o relacionado con el negocio.",
+    description: "Registra un gasto del negocio: mercadería, pasajes de reparto, alquiler, y también el pago a un ayudante o trabajador. Una sola vez por gasto.",
     parameters: {
       type: "object",
       properties: {
@@ -43,7 +43,7 @@ export const herramientas = [
   {
     type: "function",
     name: "registrar_retiro",
-    description: "Registra plata que la persona sacó de la caja para ella misma o para su casa, no para el negocio: almuerzo, pasaje de los hijos, plata para la familia.",
+    description: "Registra plata que la persona sacó de la caja para ella misma o para su casa, no para el negocio: almuerzo, pasaje de los hijos, plata para la familia. El pago a un ayudante no es retiro: es gasto.",
     parameters: {
       type: "object",
       properties: {
