@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { idiomaDePeticion } from "../../../../lib/idiomaServidor";
 import { textos } from "../../../../lib/textos";
-import { pedirConEspera } from "../../../../lib/backend";
+import { ESTADOS_DE_ESPERA, pedirConEspera } from "../../../../lib/backend";
 
 /**
  * Emite el token con el que el navegador abre el WebSocket de voz.
@@ -44,6 +44,11 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   if (!respuesta.ok) {
+    // Un 502/503/504 tras agotar la espera es un backend que sigue despertando,
+    // no una sesión rechazada: decirlo así evita buscar una clave que no falla.
+    if (ESTADOS_DE_ESPERA.has(respuesta.status)) {
+      return NextResponse.json({ error: t.noResponde }, { status: 502 });
+    }
     // El detalle queda en el log del backend; al navegador no le decimos por qué.
     return NextResponse.json({ error: t.rechazo }, { status: 502 });
   }

@@ -40,11 +40,11 @@ describe("pedir el token con el backend dormido", () => {
     assert.equal(contador.llamadas(), 1);
   });
 
-  it("se rinde después de un minuto con la última respuesta", async () => {
+  it("se rinde después de dos minutos con la última respuesta", async () => {
     const contador = respuestas(503);
     const { ahora, espera } = relojFalso();
     assert.equal((await pedirConEspera(url, {}, espera, ahora)).status, 503);
-    assert.ok(contador.llamadas() > 1 && contador.llamadas() <= 25);
+    assert.ok(contador.llamadas() > 1 && contador.llamadas() <= 50);
   });
 
   it("si nunca contesta, termina con el error de conexión", async () => {
