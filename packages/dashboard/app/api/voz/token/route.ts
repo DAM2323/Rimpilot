@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { idiomaDePeticion } from "../../../../lib/idiomaServidor";
 import { textos } from "../../../../lib/textos";
+import { pedirConEspera } from "../../../../lib/backend";
 
 /**
  * Emite el token con el que el navegador abre el WebSocket de voz.
@@ -31,7 +32,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   let respuesta: Response;
   try {
-    respuesta = await fetch(new URL("/navegador/token", backendUrl), {
+    // Si el backend estaba dormido, espera a que despierte en vez de fallar.
+    respuesta = await pedirConEspera(new URL("/navegador/token", backendUrl), {
       method: "POST",
       headers: { "content-type": "application/json", "x-rimpilot-clave": claveInterna },
       body: JSON.stringify({ vendedorId }),

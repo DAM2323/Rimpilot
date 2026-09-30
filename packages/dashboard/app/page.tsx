@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import marca from "../public/logo.png";
 import { SelectorIdioma } from "../components/SelectorIdioma";
+import { despertarBackend } from "../lib/backend";
 import { idiomaActual } from "../lib/idiomaServidor";
 import { mensajeDeError, textos } from "../lib/textos";
 
@@ -29,6 +30,8 @@ export function generateMetadata() {
 }
 
 export default function Landing({ searchParams }: { searchParams: { error?: string } }) {
+  // Quien abre la portada suele probar la voz enseguida: que el backend vaya despertando.
+  despertarBackend();
   const idioma = idiomaActual();
   const t = textos(idioma).landing;
   const error = mensajeDeError(idioma, searchParams.error);

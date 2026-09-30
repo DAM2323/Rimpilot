@@ -9,6 +9,7 @@ import { MicrofonoWari } from "../../components/MicrofonoWari";
 import { ResumenDelDia } from "../../components/ResumenDelDia";
 import { SelectorIdioma } from "../../components/SelectorIdioma";
 import { dashboardConfigurado, fechaLima, obtenerFlujo, obtenerMovimientos, obtenerResumen, obtenerVendedor, saludoLima } from "../../lib/data";
+import { despertarBackend } from "../../lib/backend";
 import { idiomaActual } from "../../lib/idiomaServidor";
 import { fraseDeLaSemana } from "../../lib/proporcion";
 import { textos } from "../../lib/textos";
@@ -36,6 +37,9 @@ export const dynamic = "force-dynamic";
 
 export default async function Libro({ searchParams }: { searchParams: Filtros }) {
   const vendedorId = vendedorActual();
+  // El micrófono está en esta página: que el backend de voz no esté dormido
+  // cuando la persona lo toque. Mientras el libro está abierto, lo mantiene despierto.
+  despertarBackend();
   const idioma = idiomaActual();
   const t = textos(idioma).libro;
   const [resumen, movimientos, flujo, vendedor] = await Promise.all([
