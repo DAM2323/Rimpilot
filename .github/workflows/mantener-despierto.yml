@@ -1,0 +1,23 @@
+# El plan gratuito de Render duerme cada servicio tras ~15 minutos sin uso y
+# despertarlo tarda 50 s o más. Mientras el jurado prueba el producto, este
+# ping cada 10 minutos lo mantiene despierto. Gratis; GitHub a veces retrasa
+# un cron unos minutos.
+#
+# Los dos servicios encendidos todo el mes superan las 750 horas gratis de
+# Render: apaga este workflow (Actions -> Deshabilitar) al terminar el jurado.
+name: Mantener despierto
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Backend de voz
+        run: curl -fsS -m 120 --retry 2 --retry-delay 5 https://rimpilot-backend.onrender.com/health
+      - name: Panel
+        run: curl -fsS -m 120 --retry 2 --retry-delay 5 https://rimpilot.onrender.com/robots.txt
